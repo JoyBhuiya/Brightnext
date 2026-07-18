@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>BrightNext Admin — Amazon Seller Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00E5FF;
+  --cyan-dim: #00B8D4;
+  --blue: #0D47A1;
+  --electric: #40C4FF;
+  --green: #00E676;
+  --red: #FF5252;
+  --amber: #FFB800;
+  --bg: #020A14;
+  --bg-card: #081828;
+  --bg-card2: #0A1E35;
+  --bg-hover: #0C2238;
+  --border: rgba(0,229,255,0.10);
+  --border-active: rgba(0,229,255,0.25);
+  --text: #E8F4FD;
+  --text-dim: #7BA3C4;
+  --text-dimmer: #4A6F8F;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'DM Sans', sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── Login Gate ── */
+#loginGate {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 30%, rgba(0,229,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 70% 70%, rgba(13,71,161,0.1) 0%, transparent 50%),
+    var(--bg);
+  padding: 2rem;
+}
+
+#loginGate.hidden { display: none; }
+
+.login-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  max-width: 420px; width: 100%;
+  position: relative; overflow: hidden;
+  box-shadow: 0 0 60px rgba(0,229,255,0.08);
+}
+
+.login-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.login-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: rgba(0,229,255,0.08);
+  border: 1px solid rgba(0,229,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; margin: 0 auto 1.25rem;
+  box-shadow: 0 0 20px rgba(0,229,255,0.15);
+}
+
+.login-card h1 {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 800; font-size: 1.5rem;
+  text-align: center; margin-bottom: 0.4rem;
+}
+
+.login-card .subtitle {
+  text-align: center; color: var(--text-dim); font-size: 0.88rem;
+  margin-bottom: 2rem;
+}
+
+.login-form-group {
+  margin-bottom: 1rem;
+}
+
+.login-label {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 0.4rem;
+}
+
+.login-input {
+  width: 100%; padding: 0.85rem 1rem;
+  background: rgba(0,229,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+  transition: all 0.3s; outline: none;
+}
+
+.login-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  background: rgba(0,229,255,0.05);
+}
+
+.login-btn {
+  width: 100%; margin-top: 1rem;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  color: #fff; border: none; padding: 1rem;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(0,229,255,0.15);
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0,229,255,0.25);
+}
+
+.login-error {
+  display: none;
+  margin-top: 1rem; padding: 0.7rem 1rem;
+  background: rgba(255,82,82,0.08);
+  border: 1px solid rgba(255,82,82,0.2);
+  border-radius: 6px; color: var(--red);
+  font-size: 0.85rem; text-align: center;
+}
+
+.login-error.visible { display: block; animation: shake 0.4s; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.login-back {
+  text-align: center; margin-top: 1.5rem;
+}
+
+.login-back a {
+  color: var(--text-dim); text-decoration: none;
+  font-size: 0.82rem; transition: color 0.3s;
+}
+
+.login-back a:hover { color: var(--cyan); }
+
+.login-hint {
+  margin-top: 1.25rem; padding: 0.7rem;
+  background: rgba(255,184,0,0.04);
+  border: 1px solid rgba(255,184,0,0.15);
+  border-radius: 6px;
+  font-size: 0.72rem; color: var(--amber);
+  text-align: center; line-height: 1.5;
+}
+
+/* ── DASHBOARD ── */
+.dash-shell { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
+
+.sidebar {
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+
+.sidebar-logo img {
+  height: 40px; width: auto;
+  filter: drop-shadow(0 0 10px rgba(0,229,255,0.3));
+}
+
+.sidebar-logo-text h1 {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 800; font-size: 1rem;
+  background: linear-gradient(135deg, var(--cyan), #fff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+}
+
+.sidebar-logo-text span {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-dim); display: block; margin-top: 2px;
+}
+
+.sidebar-section {
+  padding: 0.5rem 1.5rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--text-dimmer);
+  margin-top: 0.75rem;
+}
+
+.sidebar-link {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.7rem 1.5rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.92rem; font-weight: 600;
+  color: var(--text-dim); cursor: pointer; transition: all 0.2s;
+  border-left: 3px solid transparent; text-decoration: none;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-link:hover { color: var(--cyan); background: rgba(0,229,255,0.04); }
+.sidebar-link.active {
+  color: var(--cyan); background: rgba(0,229,255,0.06);
+  border-left-color: var(--cyan);
+}
+
+.sidebar-link .icon { font-size: 1.05rem; width: 22px; text-align: center; }
+
+.sidebar-badge {
+  margin-left: auto; background: var(--green); color: #000;
+  font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-footer {
+  margin-top: auto; padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.connection-status {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.78rem; color: var(--text-dim);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+.status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.status-dot.demo { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+@keyframes pulse-dot {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+
+.logout-btn {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-top: 0.75rem;
+  width: 100%; padding: 0.55rem 0.75rem;
+  background: rgba(255,82,82,0.06);
+  border: 1px solid rgba(255,82,82,0.15);
+  border-radius: 6px;
+  color: var(--red); cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255,82,82,0.1);
+  box-shadow: 0 0 10px rgba(255,82,82,0.1);
+}
+
+.main { padding: 1.5rem 2rem 3rem; overflow-y: auto; }
+
+/* Topbar */
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
+}
+
+.topbar h2 {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 800; font-size: 1.6rem;
+}
+
+.topbar-controls { display: flex; gap: 0.75rem; align-items: center; }
+
+.date-range {
+  display: flex; gap: 0; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+}
+
+.date-btn {
+  padding: 0.5rem 1rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: transparent; border: none;
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-btn.active { background: var(--cyan); color: var(--bg); }
+.date-btn:hover:not(.active) { color: var(--cyan); background: rgba(0,229,255,0.06); }
+
+.refresh-btn {
+  width: 38px; height: 38px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--cyan);
+  cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+}
+
+.refresh-btn:hover { background: rgba(0,229,255,0.08); box-shadow: 0 0 15px rgba(0,229,255,0.15); }
+.refresh-btn.spinning { animation: spin 0.8s linear; }
+
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+/* Winner Banner */
+.winner-banner {
+  background: linear-gradient(135deg, rgba(0,230,118,0.08), rgba(0,229,255,0.06));
+  border: 1px solid rgba(0,230,118,0.2);
+  border-radius: 12px;
+  padding: 1.25rem 1.75rem; margin-bottom: 1.75rem;
+  display: flex; align-items: center; gap: 1.25rem;
+  position: relative; overflow: hidden; flex-wrap: wrap;
+  animation: banner-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes banner-glow {
+  0% { box-shadow: 0 0 20px rgba(0,230,118,0.05); }
+  100% { box-shadow: 0 0 40px rgba(0,230,118,0.15); }
+}
+
+.winner-banner::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0.5;
+}
+
+.winner-trophy { font-size: 2.2rem; }
+
+.winner-info { flex: 1; min-width: 220px; }
+
+.winner-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--green);
+  margin-bottom: 0.2rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.live-tag {
+  background: var(--green); color: #000;
+  padding: 1px 6px; border-radius: 3px;
+  font-size: 0.6rem; animation: pulse-dot 1.5s infinite;
+}
+
+.winner-name {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 1.2rem;
+}
+
+.winner-stats { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+
+.winner-stat-item { text-align: center; }
+
+.winner-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600; font-size: 1.15rem; color: var(--green);
+}
+
+.winner-stat-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 1rem; margin-bottom: 1.75rem;
+}
+
+.kpi-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.25rem;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+
+.kpi-card:hover { border-color: var(--border-active); background: var(--bg-hover); }
+
+.kpi-card[data-trend="up"]::after,
+.kpi-card[data-trend="down"]::after {
+  content: ''; position: absolute; bottom: 0; left: 15%; right: 15%;
+  height: 1px; opacity: 0; transition: opacity 0.3s;
+}
+
+.kpi-card:hover[data-trend="up"]::after { opacity: 0.5; background: var(--green); }
+.kpi-card:hover[data-trend="down"]::after { opacity: 0.5; background: var(--red); }
+
+.kpi-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem;
+}
+
+.kpi-change {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; font-weight: 600;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+
+.kpi-change.up { color: var(--green); }
+.kpi-change.down { color: var(--red); }
+
+/* Charts */
+.charts-row {
+  display: grid; grid-template-columns: 2fr 1fr;
+  gap: 1rem; margin-bottom: 1.75rem;
+}
+
+.chart-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.5rem; position: relative;
+}
+
+.chart-title {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 0.95rem;
+  margin-bottom: 1rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.chart-title .sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem; color: var(--text-dim);
+  font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+}
+
+.chart-area { position: relative; width: 100%; }
+
+canvas { max-width: 100% !important; height: auto !important; }
+
+/* Table */
+.table-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.5rem; margin-bottom: 1.75rem;
+}
+
+.table-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;
+}
+
+.table-title {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 1rem;
+}
+
+.table-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem; color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.table-scroll { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-dim);
+  padding: 0.75rem; text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.85rem 0.75rem; font-size: 0.86rem;
+  border-bottom: 1px solid rgba(0,229,255,0.04);
+  vertical-align: middle;
+}
+
+tbody tr { transition: background 0.2s; }
+tbody tr:hover { background: rgba(0,229,255,0.03); }
+
+.product-cell { display: flex; align-items: center; gap: 0.75rem; }
+
+.product-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+.product-name-col {
+  font-weight: 600; font-size: 0.86rem; line-height: 1.3;
+}
+
+.product-asin {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem; color: var(--text-dimmer);
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; }
+
+.dash-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 3px 8px; border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3px;
+}
+
+.badge-winner { background: rgba(0,230,118,0.15); color: var(--green); }
+.badge-growth { background: rgba(64,196,255,0.12); color: var(--electric); }
+.badge-stable { background: rgba(255,184,0,0.12); color: var(--amber); }
+.badge-risk { background: rgba(255,82,82,0.12); color: var(--red); }
+
+.margin-bar-container {
+  width: 80px; height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow: hidden;
+}
+
+.margin-bar {
+  height: 100%; border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* Profitability Cards */
+.profit-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; margin-bottom: 1.75rem;
+}
+
+.profit-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.25rem;
+}
+
+.profit-card-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+
+.profit-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0; font-size: 0.82rem;
+  border-bottom: 1px solid rgba(0,229,255,0.04);
+}
+
+.profit-row:last-of-type { border-bottom: none; }
+
+.profit-row .label { color: var(--text-dim); }
+
+.profit-row .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.profit-row .val.negative { color: var(--red); }
+
+.profit-total {
+  margin-top: 0.5rem; padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; font-size: 0.95rem;
+}
+
+.profit-total .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+/* API Setup */
+.api-panel {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1.75rem;
+}
+
+.api-panel-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+}
+
+.api-panel-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: rgba(0,229,255,0.08);
+  border: 1px solid rgba(0,229,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+
+.api-panel-title {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 1.05rem; margin-bottom: 0.2rem;
+}
+
+.api-panel-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem; color: var(--text-dim);
+}
+
+.api-steps {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; margin-top: 1.25rem;
+}
+
+.api-step {
+  background: rgba(0,229,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem;
+  text-align: center; transition: all 0.3s;
+}
+
+.api-step:hover {
+  border-color: var(--border-active);
+  background: rgba(0,229,255,0.04);
+}
+
+.api-step-num {
+  width: 30px; height: 30px; border-radius: 50%;
+  margin: 0 auto 0.75rem;
+  border: 1.5px solid var(--cyan);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; font-weight: 700; color: var(--cyan);
+  background: rgba(0,229,255,0.05);
+}
+
+.api-step-title {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 0.9rem; margin-bottom: 0.4rem;
+}
+
+.api-step-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;
+}
+
+/* Animations */
+.fade-in {
+  opacity: 0; transform: translateY(15px);
+  animation: fadeUp 0.5s ease forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* Mobile */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .profit-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1024px) {
+  .dash-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; left: -280px; z-index: 100; width: 260px;
+    transition: left 0.3s; box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { left: 0; }
+  .mobile-toggle {
+    display: flex !important; position: fixed; top: 1rem; left: 1rem;
+    z-index: 101; width: 40px; height: 40px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-card);
+    color: var(--cyan); align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.2rem;
+  }
+  .charts-row { grid-template-columns: 1fr; }
+  .winner-stats { gap: 1rem; }
+  .main { padding-top: 4.5rem; }
+}
+
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .profit-grid { grid-template-columns: 1fr; }
+  .api-steps { grid-template-columns: 1fr; }
+  .main { padding: 4.5rem 1rem 2rem; }
+  .winner-banner { flex-direction: column; text-align: center; }
+  .winner-stats { justify-content: center; }
+  table { font-size: 0.8rem; }
+}
+
+.mobile-toggle { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN GATE ═══════════ -->
+<div id="loginGate">
+  <div class="login-card">
+    <div class="login-icon">🔒</div>
+    <h1>Admin Access</h1>
+    <p class="subtitle">BrightNext Amazon Seller Analytics</p>
+
+    <form id="loginForm" onsubmit="checkLogin(event)">
+      <div class="login-form-group">
+        <label class="login-label">Username</label>
+        <input type="text" class="login-input" id="loginUser" autocomplete="username" required>
+      </div>
+      <div class="login-form-group">
+        <label class="login-label">Password</label>
+        <input type="password" class="login-input" id="loginPass" autocomplete="current-password" required>
+      </div>
+      <button class="login-btn" type="submit">Sign In →</button>
+    </form>
+
+    <div class="login-error" id="loginError">⚠ Invalid credentials. Please try again.</div>
+
+    <div class="login-hint">
+      <strong>Demo credentials</strong><br>
+      Username: <code style="color:var(--cyan)">admin</code> &nbsp;|&nbsp; Password: <code style="color:var(--cyan)">brightnext2026</code>
+    </div>
+
+    <div class="login-back">
+      <a href="index.html">← Back to website</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DASHBOARD (hidden until login) ═══════════ -->
+<div id="dashboardArea" style="display:none;">
+
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="dash-shell">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="brightnext-logo.png" alt="BrightNext" onerror="this.style.display='none'">
+    <div class="sidebar-logo-text">
+      <h1>BrightNext</h1>
+      <span>Admin Console</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">Dashboard</div>
+  <a class="sidebar-link active" href="#"><span class="icon">📊</span> Overview <span class="sidebar-badge">LIVE</span></a>
+  <a class="sidebar-link" href="#"><span class="icon">🏆</span> Winning Products</a>
+  <a class="sidebar-link" href="#"><span class="icon">💰</span> Profitability</a>
+
+  <div class="sidebar-section">Analytics</div>
+  <a class="sidebar-link" href="#"><span class="icon">📈</span> Sales Trends</a>
+  <a class="sidebar-link" href="#"><span class="icon">📦</span> Inventory</a>
+  <a class="sidebar-link" href="#"><span class="icon">🔄</span> Returns &amp; Refunds</a>
+  <a class="sidebar-link" href="#"><span class="icon">⭐</span> Reviews</a>
+
+  <div class="sidebar-section">Amazon</div>
+  <a class="sidebar-link" href="#api-setup"><span class="icon">🔗</span> SP-API Connect</a>
+  <a class="sidebar-link" href="#"><span class="icon">📋</span> PPC Campaigns</a>
+  <a class="sidebar-link" href="#"><span class="icon">⚙️</span> Settings</a>
+
+  <div class="sidebar-footer">
+    <div class="connection-status">
+      <span class="status-dot demo"></span>
+      <span>Demo Mode</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">⏻ Sign Out</button>
+  </div>
+</aside>
+
+<main class="main">
+
+  <div class="topbar fade-in">
+    <div>
+      <h2>Sales &amp; Profitability Dashboard</h2>
+      <span style="font-size:0.78rem; color:var(--text-dim); font-family:'Rajdhani',sans-serif;">BrightNext Goods and Services Ltd. — Amazon UK Marketplace</span>
+    </div>
+    <div class="topbar-controls">
+      <div class="date-range">
+        <button class="date-btn" onclick="setRange(this,'7d')">7D</button>
+        <button class="date-btn active" onclick="setRange(this,'30d')">30D</button>
+        <button class="date-btn" onclick="setRange(this,'90d')">90D</button>
+        <button class="date-btn" onclick="setRange(this,'ytd')">YTD</button>
+      </div>
+      <button class="refresh-btn" onclick="refreshData(this)" title="Refresh">⟳</button>
+    </div>
+  </div>
+
+  <!-- 🏆 Winner -->
+  <div class="winner-banner fade-in stagger-1">
+    <div class="winner-trophy">🏆</div>
+    <div class="winner-info">
+      <div class="winner-label">Winning Product <span class="live-tag">LIVE</span></div>
+      <div class="winner-name" id="winnerName">Pet Hair Removal Brush</div>
+    </div>
+    <div class="winner-stats">
+      <div class="winner-stat-item"><div class="winner-stat-val" id="winnerRevenue">£4,280</div><div class="winner-stat-lbl">Revenue</div></div>
+      <div class="winner-stat-item"><div class="winner-stat-val" id="winnerMargin">42.3%</div><div class="winner-stat-lbl">Net Margin</div></div>
+      <div class="winner-stat-item"><div class="winner-stat-val" id="winnerUnits">312</div><div class="winner-stat-lbl">Units</div></div>
+      <div class="winner-stat-item"><div class="winner-stat-val" id="winnerROI">285%</div><div class="winner-stat-lbl">ROI</div></div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid fade-in stagger-2">
+    <div class="kpi-card" data-trend="up">
+      <div class="kpi-label">💷 Total Revenue</div>
+      <div class="kpi-value" id="kpiRevenue">£12,847</div>
+      <div class="kpi-change up">▲ 18.4% vs prev</div>
+    </div>
+    <div class="kpi-card" data-trend="up">
+      <div class="kpi-label">📦 Units Sold</div>
+      <div class="kpi-value" id="kpiUnits">843</div>
+      <div class="kpi-change up">▲ 12.1% vs prev</div>
+    </div>
+    <div class="kpi-card" data-trend="up">
+      <div class="kpi-label">💰 Net Profit</div>
+      <div class="kpi-value" id="kpiProfit">£4,216</div>
+      <div class="kpi-change up">▲ 22.7% vs prev</div>
+    </div>
+    <div class="kpi-card" data-trend="up">
+      <div class="kpi-label">📊 Avg Margin</div>
+      <div class="kpi-value" id="kpiMargin">32.8%</div>
+      <div class="kpi-change up">▲ 3.2pp vs prev</div>
+    </div>
+    <div class="kpi-card" data-trend="down">
+      <div class="kpi-label">🔄 Return Rate</div>
+      <div class="kpi-value" id="kpiReturns">2.4%</div>
+      <div class="kpi-change up">▼ 0.8pp (improving)</div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="charts-row fade-in stagger-3">
+    <div class="chart-card">
+      <div class="chart-title">Revenue &amp; Profit Trend <span class="sub">Last 30 Days</span></div>
+      <div class="chart-area"><canvas id="revenueChart" height="240"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Product <span class="sub">Share %</span></div>
+      <div class="chart-area"><canvas id="productPieChart" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Product Table -->
+  <div class="table-card fade-in stagger-4">
+    <div class="table-header">
+      <div>
+        <div class="table-title">Product Performance &amp; Profitability</div>
+        <div class="table-subtitle">Real-time ranking by net profit margin — winner flagged automatically</div>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Status</th>
+            <th>Units</th>
+            <th>Revenue</th>
+            <th>COGS</th>
+            <th>Amazon Fees</th>
+            <th>PPC</th>
+            <th>Net Profit</th>
+            <th>Margin</th>
+            <th>ROI</th>
+          </tr>
+        </thead>
+        <tbody id="productTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Profit Section -->
+  <div class="fade-in stagger-5" style="margin-bottom:0.75rem;">
+    <div class="table-title" style="font-family:'Exo 2',sans-serif;">Profitability Analysis — Full P&amp;L Breakdown</div>
+    <div class="table-subtitle">All cost categories per product for complete margin visibility</div>
+  </div>
+
+  <div class="profit-grid fade-in stagger-6" id="profitGrid"></div>
+
+  <!-- Charts Row 2 -->
+  <div class="charts-row fade-in stagger-7">
+    <div class="chart-card">
+      <div class="chart-title">Cost Breakdown by Category <span class="sub">All Products</span></div>
+      <div class="chart-area"><canvas id="costChart" height="240"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">ROI Comparison <span class="sub">Per Product</span></div>
+      <div class="chart-area"><canvas id="roiChart" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <!-- API Setup -->
+  <div class="api-panel fade-in stagger-8" id="api-setup">
+    <div class="api-panel-header">
+      <div class="api-panel-icon">🔗</div>
+      <div>
+        <div class="api-panel-title">Connect Amazon Seller Central (SP-API)</div>
+        <div class="api-panel-desc">Link your Amazon Seller account for real-time data — replaces demo data with live sales</div>
+      </div>
+    </div>
+    <div class="api-steps">
+      <div class="api-step">
+        <div class="api-step-num">1</div>
+        <div class="api-step-title">Register App</div>
+        <div class="api-step-desc">Create an app in Amazon Seller Central → Apps &amp; Services → Develop Apps. Get your Client ID and Client Secret.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">2</div>
+        <div class="api-step-title">Authorise Access</div>
+        <div class="api-step-desc">Grant BrightNext OAuth access. Read-only scopes: Orders, Inventory, Finance, Reports.</div>
+      </div>
+      <div class="api-step">
+        <div class="api-step-num">3</div>
+        <div class="api-step-title">Go Live</div>
+        <div class="api-step-desc">Dashboard fetches live SP-API data. Auto-refresh every 15 minutes. All data encrypted in transit.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════
+//  AUTHENTICATION (CLIENT-SIDE DEMO)
+// ═══════════════════════════════════════════
+// NOTE: For production, replace with real server-side authentication.
+// Client-side auth is NOT secure — anyone can view the source.
+// This is a demonstration gate only.
+
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'brightnext2026';
+const SESSION_KEY = 'brightnext_admin_session';
+const SESSION_HOURS = 8;
+
+function checkLogin(event) {
+  event.preventDefault();
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    // Set session in sessionStorage (cleared on browser close)
+    const session = {
+      user: user,
+      expires: Date.now() + (SESSION_HOURS * 60 * 60 * 1000)
+    };
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch (e) {
+      // sessionStorage may be unavailable; fall back to in-memory only
+    }
+    showDashboard();
+  } else {
+    errorEl.classList.add('visible');
+    setTimeout(() => errorEl.classList.remove('visible'), 3000);
+    document.getElementById('loginPass').value = '';
+  }
+  return false;
+}
+
+function isAuthenticated() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const session = JSON.parse(raw);
+    if (!session.expires || Date.now() > session.expires) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function showDashboard() {
+  document.getElementById('loginGate').classList.add('hidden');
+  document.getElementById('dashboardArea').style.display = 'block';
+  // Initialize dashboard
+  if (typeof Chart !== 'undefined') {
+    renderAll();
+  } else {
+    // Wait for Chart.js
+    const wait = setInterval(() => {
+      if (typeof Chart !== 'undefined') {
+        clearInterval(wait);
+        renderAll();
+      }
+    }, 100);
+  }
+}
+
+function logout() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  document.getElementById('dashboardArea').style.display = 'none';
+  document.getElementById('loginGate').classList.remove('hidden');
+  document.getElementById('loginPass').value = '';
+}
+
+// Auto-login if valid session
+document.addEventListener('DOMContentLoaded', () => {
+  if (isAuthenticated()) showDashboard();
+});
+
+// ═══════════════════════════════════════════
+//  AMAZON SELLER ANALYTICS — DATA ENGINE
+// ═══════════════════════════════════════════
+
+const PRODUCTS = [
+  { name: 'Pet Hair Removal Brush', asin: 'B0DXXXXP01', color: '#FF6B2C',
+    unitPrice: 13.99, cogs: 3.20, amazonFeeRate: 0.153, fbaFee: 3.22,
+    ppcCostPerUnit: 1.15, shippingIn: 0.65, storageFee: 0.18, returnRate: 0.018,
+    baseUnits: 312, growth: 0.24 },
+  { name: 'Smart Cable Organiser', asin: 'B0DXXXXC02', color: '#00E5FF',
+    unitPrice: 9.99, cogs: 2.10, amazonFeeRate: 0.153, fbaFee: 3.07,
+    ppcCostPerUnit: 0.92, shippingIn: 0.45, storageFee: 0.12, returnRate: 0.025,
+    baseUnits: 228, growth: 0.15 },
+  { name: 'Car MagSafe Charger Mount', asin: 'B0DXXXXM03', color: '#FFB800',
+    unitPrice: 24.99, cogs: 7.80, amazonFeeRate: 0.153, fbaFee: 4.15,
+    ppcCostPerUnit: 2.40, shippingIn: 0.90, storageFee: 0.22, returnRate: 0.032,
+    baseUnits: 187, growth: 0.10 },
+  { name: 'Kids Creative Drawing Book', asin: 'B0DXXXXK04', color: '#FF4E8C',
+    unitPrice: 7.99, cogs: 1.85, amazonFeeRate: 0.153, fbaFee: 2.90,
+    ppcCostPerUnit: 0.68, shippingIn: 0.50, storageFee: 0.15, returnRate: 0.012,
+    baseUnits: 116, growth: 0.08 }
+];
+
+function simulate() {
+  const jitter = () => 0.9 + Math.random() * 0.2;
+  return PRODUCTS.map(p => {
+    const units = Math.round(p.baseUnits * jitter());
+    const revenue = +(units * p.unitPrice).toFixed(2);
+    const totalCogs = +(units * p.cogs).toFixed(2);
+    const amazonReferral = +(revenue * p.amazonFeeRate).toFixed(2);
+    const fbaTotal = +(units * p.fbaFee).toFixed(2);
+    const ppcSpend = +(units * p.ppcCostPerUnit).toFixed(2);
+    const shipping = +(units * p.shippingIn).toFixed(2);
+    const storage = +(units * p.storageFee).toFixed(2);
+    const returnCost = +(Math.round(units * p.returnRate) * (p.cogs + p.fbaFee)).toFixed(2);
+    const totalFees = +(amazonReferral + fbaTotal).toFixed(2);
+    const totalCost = +(totalCogs + totalFees + ppcSpend + shipping + storage + returnCost).toFixed(2);
+    const netProfit = +(revenue - totalCost).toFixed(2);
+    const margin = +((netProfit / revenue) * 100).toFixed(1);
+    const roi = +(((revenue - totalCost) / totalCost) * 100).toFixed(0);
+    const growthPct = +((p.growth + (Math.random() * 0.06 - 0.03)) * 100).toFixed(1);
+    return { ...p, units, revenue, totalCogs, amazonReferral, fbaTotal,
+      ppcSpend, shipping, storage, returnCost, totalFees, totalCost,
+      netProfit, margin, roi, growthPct };
+  }).sort((a, b) => b.margin - a.margin);
+}
+
+let currentData = simulate();
+
+function getWinner(data) {
+  const totalRev = data.reduce((s, p) => s + p.revenue, 0);
+  const maxMargin = Math.max(...data.map(p => p.margin));
+  const maxROI = Math.max(...data.map(p => p.roi));
+  let best = null, bestScore = -1;
+  data.forEach(p => {
+    const score = (p.margin / maxMargin) * 0.4 +
+                  (p.roi / maxROI) * 0.3 +
+                  (p.revenue / totalRev) * 0.3;
+    if (score > bestScore) { bestScore = score; best = p; }
+  });
+  return best;
+}
+
+function renderAll() {
+  currentData = simulate();
+  renderWinner();
+  renderKPIs();
+  renderTable();
+  renderProfitCards();
+  renderCharts();
+}
+
+function renderWinner() {
+  const w = getWinner(currentData);
+  document.getElementById('winnerName').textContent = w.name;
+  document.getElementById('winnerRevenue').textContent = '£' + w.revenue.toLocaleString();
+  document.getElementById('winnerMargin').textContent = w.margin + '%';
+  document.getElementById('winnerUnits').textContent = w.units;
+  document.getElementById('winnerROI').textContent = w.roi + '%';
+}
+
+function renderKPIs() {
+  const totals = currentData.reduce((acc, p) => {
+    acc.revenue += p.revenue;
+    acc.units += p.units;
+    acc.profit += p.netProfit;
+    return acc;
+  }, { revenue: 0, units: 0, profit: 0 });
+  const avgMargin = (totals.profit / totals.revenue * 100).toFixed(1);
+  const avgReturn = (currentData.reduce((s, p) => s + p.returnRate, 0) / currentData.length * 100).toFixed(1);
+  document.getElementById('kpiRevenue').textContent = '£' + Math.round(totals.revenue).toLocaleString();
+  document.getElementById('kpiUnits').textContent = totals.units.toLocaleString();
+  document.getElementById('kpiProfit').textContent = '£' + Math.round(totals.profit).toLocaleString();
+  document.getElementById('kpiMargin').textContent = avgMargin + '%';
+  document.getElementById('kpiReturns').textContent = avgReturn + '%';
+}
+
+function renderTable() {
+  const winner = getWinner(currentData);
+  const tbody = document.getElementById('productTableBody');
+  tbody.innerHTML = currentData.map(p => {
+    const isWinner = p.asin === winner.asin;
+    let badge = '';
+    if (isWinner) badge = '<span class="dash-badge badge-winner">🏆 WINNER</span>';
+    else if (p.growthPct > 15) badge = '<span class="dash-badge badge-growth">↑ GROWTH</span>';
+    else if (p.growthPct > 5) badge = '<span class="dash-badge badge-stable">→ STABLE</span>';
+    else badge = '<span class="dash-badge badge-risk">⚠ WATCH</span>';
+    const marginColor = p.margin > 35 ? 'var(--green)' : p.margin > 20 ? 'var(--amber)' : 'var(--red)';
+    const marginWidth = Math.min(p.margin / 50 * 100, 100);
+    return `<tr style="${isWinner ? 'background:rgba(0,230,118,0.03);' : ''}">
+      <td><div class="product-cell">
+        <div class="product-dot" style="background:${p.color}"></div>
+        <div>
+          <div class="product-name-col">${p.name}</div>
+          <div class="product-asin">${p.asin}</div>
+        </div>
+      </div></td>
+      <td>${badge}</td>
+      <td class="mono">${p.units}</td>
+      <td class="mono">£${p.revenue.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text-dim)">£${p.totalCogs.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text-dim)">£${p.totalFees.toLocaleString()}</td>
+      <td class="mono" style="color:var(--text-dim)">£${p.ppcSpend.toLocaleString()}</td>
+      <td class="mono" style="color:${p.netProfit > 0 ? 'var(--green)' : 'var(--red)'}">£${p.netProfit.toLocaleString()}</td>
+      <td><div style="display:flex; align-items:center; gap:0.5rem;">
+        <div class="margin-bar-container">
+          <div class="margin-bar" style="width:${marginWidth}%; background:${marginColor};"></div>
+        </div>
+        <span class="mono" style="color:${marginColor}">${p.margin}%</span>
+      </div></td>
+      <td class="mono" style="color:${p.roi > 100 ? 'var(--green)' : 'var(--amber)'}">${p.roi}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderProfitCards() {
+  const grid = document.getElementById('profitGrid');
+  grid.innerHTML = currentData.map(p => `
+    <div class="profit-card">
+      <div class="profit-card-title"><span style="color:${p.color}">●</span> ${p.name}</div>
+      <div class="profit-row"><span class="label">Revenue</span><span class="val">£${p.revenue.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">COGS</span><span class="val negative">-£${p.totalCogs.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">Amazon Referral</span><span class="val negative">-£${p.amazonReferral.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">FBA Fulfilment</span><span class="val negative">-£${p.fbaTotal.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">PPC / Ads</span><span class="val negative">-£${p.ppcSpend.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">Shipping In</span><span class="val negative">-£${p.shipping.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">Storage</span><span class="val negative">-£${p.storage.toLocaleString()}</span></div>
+      <div class="profit-row"><span class="label">Returns</span><span class="val negative">-£${p.returnCost.toLocaleString()}</span></div>
+      <div class="profit-total">
+        <span>Net Profit</span>
+        <span class="val" style="color:${p.netProfit > 0 ? 'var(--green)' : 'var(--red)'}">£${p.netProfit.toLocaleString()}</span>
+      </div>
+      <div style="margin-top:0.6rem; text-align:center;">
+        <span class="dash-badge ${p.margin > 35 ? 'badge-winner' : p.margin > 20 ? 'badge-growth' : 'badge-risk'}">
+          Margin ${p.margin}% &nbsp;|&nbsp; ROI ${p.roi}%
+        </span>
+      </div>
+    </div>`).join('');
+}
+
+let revChart, pieChart, costChart, roiChart;
+
+function renderCharts() {
+  renderRevenueChart();
+  renderPieChart();
+  renderCostChart();
+  renderROIChart();
+}
+
+function renderRevenueChart() {
+  const ctx = document.getElementById('revenueChart');
+  if (!ctx) return;
+  if (revChart) revChart.destroy();
+  const labels = Array.from({length: 30}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - 29 + i);
+    return d.getDate() + '/' + (d.getMonth() + 1);
+  });
+  const dailyRev = currentData.reduce((s, p) => s + p.revenue, 0) / 30;
+  const dailyProf = currentData.reduce((s, p) => s + p.netProfit, 0) / 30;
+  const revData = labels.map((_, i) => +(dailyRev * (1 + (i / 30) * 0.15) * (0.8 + Math.random() * 0.4)).toFixed(0));
+  const profData = labels.map((_, i) => +(dailyProf * (1 + (i / 30) * 0.2) * (0.75 + Math.random() * 0.5)).toFixed(0));
+  revChart = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Revenue', data: revData, borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.08)', fill: true, tension: 0.4, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 },
+      { label: 'Net Profit', data: profData, borderColor: '#00E676', backgroundColor: 'rgba(0,230,118,0.06)', fill: true, tension: 0.4, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 }
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, boxWidth: 12, padding: 16 }},
+        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
+          callbacks: { label: c => c.dataset.label + ': £' + c.parsed.y.toLocaleString() }}
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10 }},
+        y: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '£' + v }}
+      }
+    }
+  });
+}
+
+function renderPieChart() {
+  const ctx = document.getElementById('productPieChart');
+  if (!ctx) return;
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(ctx.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: currentData.map(p => p.name.split(' ').slice(0, 3).join(' ')),
+      datasets: [{ data: currentData.map(p => p.revenue), backgroundColor: currentData.map(p => p.color), borderColor: '#081828', borderWidth: 3, hoverOffset: 8 }]},
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, padding: 12, boxWidth: 10 }},
+        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
+          callbacks: { label: c => { const t = c.dataset.data.reduce((s,v) => s+v, 0);
+            return ' £' + c.parsed.toLocaleString() + ' (' + (c.parsed/t*100).toFixed(1) + '%)'; }}}
+      }
+    }
+  });
+}
+
+function renderCostChart() {
+  const ctx = document.getElementById('costChart');
+  if (!ctx) return;
+  if (costChart) costChart.destroy();
+  const cats = ['COGS', 'Amazon Fees', 'FBA', 'PPC', 'Shipping', 'Storage', 'Returns'];
+  const getCat = (p, c) => ({
+    'COGS': p.totalCogs, 'Amazon Fees': p.amazonReferral, 'FBA': p.fbaTotal,
+    'PPC': p.ppcSpend, 'Shipping': p.shipping, 'Storage': +p.storage, 'Returns': p.returnCost
+  })[c];
+  costChart = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: { labels: cats,
+      datasets: currentData.map(p => ({
+        label: p.name.split(' ').slice(0, 2).join(' '),
+        data: cats.map(c => getCat(p, c)),
+        backgroundColor: p.color + 'CC', borderColor: p.color,
+        borderWidth: 1, borderRadius: 3
+      }))},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, boxWidth: 10, padding: 14 }},
+        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
+          callbacks: { label: c => c.dataset.label + ': £' + c.parsed.y.toLocaleString() }}
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#4A6F8F', font: { family: 'Rajdhani', size: 10 }}},
+        y: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '£' + v }}
+      }
+    }
+  });
+}
+
+function renderROIChart() {
+  const ctx = document.getElementById('roiChart');
+  if (!ctx) return;
+  if (roiChart) roiChart.destroy();
+  roiChart = new Chart(ctx.getContext('2d'), {
+    type: 'bar',
+    data: { labels: currentData.map(p => p.name.split(' ').slice(0, 2).join(' ')),
+      datasets: [{ label: 'ROI %', data: currentData.map(p => p.roi),
+        backgroundColor: currentData.map(p => p.roi > 150 ? 'rgba(0,230,118,0.7)' : p.roi > 80 ? 'rgba(0,229,255,0.6)' : 'rgba(255,184,0,0.6)'),
+        borderColor: currentData.map(p => p.roi > 150 ? '#00E676' : p.roi > 80 ? '#00E5FF' : '#FFB800'),
+        borderWidth: 1, borderRadius: 6, barPercentage: 0.6 }]},
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
+          callbacks: { label: c => 'ROI: ' + c.parsed.x + '%' }}
+      },
+      scales: {
+        x: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + '%' }},
+        y: { grid: { display: false }, ticks: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 12, weight: '600' }}}
+      }
+    }
+  });
+}
+
+function setRange(btn, range) {
+  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAll();
+}
+
+function refreshData(btn) {
+  btn.classList.add('spinning');
+  setTimeout(() => {
+    btn.classList.remove('spinning');
+    renderAll();
+  }, 800);
+}
+
+// Auto-refresh every 60 seconds when authenticated
+setInterval(() => {
+  if (isAuthenticated() && document.getElementById('dashboardArea').style.display !== 'none') {
+    renderAll();
+  }
+}, 60000);
+</script>
+
+</body>
+</html>

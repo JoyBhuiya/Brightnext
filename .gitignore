@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel/
+
+# Environment / secrets (Amazon SP-API credentials live here — never commit)
+.env
+.env.local
+.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

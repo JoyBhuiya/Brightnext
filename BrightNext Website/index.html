@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrightNext Goods and Services Ltd.</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand-cyan: #00E5FF;
+  --brand-cyan-mid: #00B8D4;
+  --brand-blue: #0D47A1;
+  --brand-electric: #40C4FF;
+  --brand-glow: #00BCD4;
+  --brand-accent: #76FF03;
+  --brand-warm: #FF6B2C;
+  --brand-gold: #FFB800;
+  --brand-pink: #FF4E8C;
+  --bg-dark: #020A14;
+  --bg-card: #081828;
+  --bg-card-hover: #0C2238;
+  --text-light: #E8F4FD;
+  --text-muted: #7BA3C4;
+  --glass: rgba(0,229,255,0.04);
+  --glass-border: rgba(0,229,255,0.12);
+  --glow-sm: 0 0 15px rgba(0,229,255,0.15);
+  --glow-md: 0 0 30px rgba(0,229,255,0.2);
+  --glow-lg: 0 0 60px rgba(0,229,255,0.15), 0 0 120px rgba(0,229,255,0.05);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  overflow-x: hidden;
+}
+
+/* ── GRID BACKGROUND ── */
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 20%, transparent 70%);
+}
+
+.ambient-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 20%, rgba(0,229,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 70% 60%, rgba(13,71,161,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 90%, rgba(0,188,212,0.05) 0%, transparent 50%);
+}
+
+/* ── PARTICLES ── */
+.particles {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+
+.particle {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%;
+  background: var(--brand-cyan);
+  animation: drift linear infinite;
+  opacity: 0;
+}
+
+@keyframes drift {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-10vh) translateX(30px); opacity: 0; }
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 0.8rem 3rem;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(24px);
+  background: rgba(2,10,20,0.75);
+  border-bottom: 1px solid var(--glass-border);
+  transition: all 0.4s;
+}
+
+.logo-mark {
+  display: flex; align-items: center; gap: 0;
+  text-decoration: none;
+}
+
+.logo-mark img {
+  height: 52px;
+  width: auto;
+  filter: drop-shadow(0 0 12px rgba(0,229,255,0.3));
+  transition: filter 0.3s;
+}
+
+.logo-mark:hover img {
+  filter: drop-shadow(0 0 20px rgba(0,229,255,0.5));
+}
+
+.nav-links { display: flex; gap: 2rem; align-items: center; }
+
+.nav-links a {
+  color: var(--text-muted); text-decoration: none;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem; font-weight: 600; letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.3s; position: relative;
+}
+
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+  background: var(--brand-cyan); transition: width 0.3s;
+  box-shadow: 0 0 8px var(--brand-cyan);
+}
+
+.nav-links a:hover { color: var(--brand-cyan); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-cta {
+  background: transparent !important;
+  border: 1px solid var(--brand-cyan) !important;
+  color: var(--brand-cyan) !important;
+  padding: 0.55rem 1.5rem; border-radius: 4px;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  box-shadow: var(--glow-sm), inset 0 0 15px rgba(0,229,255,0.05);
+  transition: all 0.3s !important;
+}
+
+.nav-cta:hover {
+  background: rgba(0,229,255,0.1) !important;
+  box-shadow: var(--glow-md), inset 0 0 25px rgba(0,229,255,0.08);
+  transform: translateY(-1px);
+}
+
+.nav-cta::after { display: none !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative; z-index: 1;
+  min-height: 100vh; display: flex; align-items: center;
+  padding: 7rem 3rem 4rem;
+}
+
+.hero-grid {
+  max-width: 1400px; margin: 0 auto; width: 100%;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+}
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.15);
+  padding: 0.5rem 1.2rem; border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem; color: var(--brand-cyan); font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  animation: fadeSlideUp 0.8s ease both;
+}
+
+.hero-badge .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--brand-cyan);
+  box-shadow: 0 0 10px var(--brand-cyan);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--brand-cyan); }
+  50% { opacity: 0.4; box-shadow: 0 0 20px var(--brand-cyan); }
+}
+
+.hero h1 {
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(2.8rem, 5vw, 4.2rem);
+  font-weight: 900; line-height: 1.08;
+  margin-bottom: 1.5rem;
+  animation: fadeSlideUp 0.8s 0.1s ease both;
+  letter-spacing: -0.5px;
+}
+
+.hero h1 .gradient-text {
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-electric), #fff, var(--brand-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-size: 300% 100%;
+  animation: gradient-shift 5s ease infinite;
+  text-shadow: none;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero p {
+  font-size: 1.1rem; color: var(--text-muted); line-height: 1.75;
+  max-width: 520px; margin-bottom: 2.5rem;
+  animation: fadeSlideUp 0.8s 0.2s ease both;
+}
+
+.hero-actions {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  animation: fadeSlideUp 0.8s 0.3s ease both;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+  color: #fff; border: none; padding: 1rem 2.4rem;
+  border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  cursor: pointer; display: flex; align-items: center; gap: 0.6rem;
+  box-shadow: 0 0 30px rgba(0,229,255,0.2), 0 4px 20px rgba(0,0,0,0.3);
+  transition: all 0.3s; text-decoration: none;
+  position: relative; overflow: hidden;
+}
+
+.btn-primary::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before { left: 100%; }
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 40px rgba(0,229,255,0.3), 0 8px 30px rgba(0,0,0,0.3); }
+
+.btn-secondary {
+  background: transparent; border: 1px solid var(--glass-border);
+  color: var(--brand-cyan); padding: 1rem 2.4rem; border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  transition: all 0.3s; text-decoration: none;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+
+.btn-secondary:hover {
+  background: rgba(0,229,255,0.06); border-color: var(--brand-cyan);
+  box-shadow: var(--glow-sm); transform: translateY(-2px);
+}
+
+/* Hero Visual */
+.hero-visual {
+  position: relative;
+  animation: fadeSlideUp 0.8s 0.4s ease both;
+}
+
+.hero-logo-container {
+  width: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.hero-logo-glow {
+  position: relative;
+  width: 100%; max-width: 560px;
+}
+
+.hero-logo-glow img {
+  width: 100%; height: auto;
+  filter: drop-shadow(0 0 40px rgba(0,229,255,0.3));
+  animation: logo-breathe 4s ease-in-out infinite;
+}
+
+@keyframes logo-breathe {
+  0%, 100% { filter: drop-shadow(0 0 40px rgba(0,229,255,0.3)); }
+  50% { filter: drop-shadow(0 0 60px rgba(0,229,255,0.5)) drop-shadow(0 0 100px rgba(0,229,255,0.15)); }
+}
+
+.hero-scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+  opacity: 0.4;
+  animation: scanline 4s linear infinite;
+}
+
+@keyframes scanline {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.floating-card {
+  position: absolute; background: var(--bg-card);
+  border: 1px solid var(--glass-border); border-radius: 8px;
+  padding: 0.9rem 1.1rem; display: flex; align-items: center; gap: 0.7rem;
+  box-shadow: var(--glow-sm), 0 8px 32px rgba(0,0,0,0.4);
+  z-index: 3;
+  animation: float 6s ease-in-out infinite;
+  backdrop-filter: blur(10px);
+}
+
+.floating-card:nth-child(2) { top: 2%; right: -3%; animation-delay: 0s; }
+.floating-card:nth-child(3) { bottom: 18%; left: -6%; animation-delay: 2s; }
+.floating-card:nth-child(4) { bottom: 2%; right: 8%; animation-delay: 4s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+.fc-icon {
+  width: 38px; height: 38px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+  background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.15);
+}
+
+.fc-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem; font-weight: 700; letter-spacing: 0.3px;
+}
+
+.fc-sub { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ── STATS ── */
+.stats-bar {
+  position: relative; z-index: 1;
+  max-width: 1400px; margin: -2rem auto 0; padding: 0 3rem;
+}
+
+.stats-inner {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 8px; overflow: hidden;
+  box-shadow: var(--glow-sm);
+}
+
+.stat-item {
+  padding: 2rem; text-align: center;
+  border-right: 1px solid var(--glass-border);
+  transition: background 0.3s;
+  position: relative;
+}
+
+.stat-item::after {
+  content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+  height: 1px; background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+
+.stat-item:hover::after { opacity: 0.5; }
+.stat-item:last-child { border-right: none; }
+.stat-item:hover { background: rgba(0,229,255,0.03); }
+
+.stat-num {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 2.2rem; font-weight: 900;
+  color: var(--brand-cyan);
+  text-shadow: 0 0 20px rgba(0,229,255,0.3);
+}
+
+.stat-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;
+  font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+/* ── SECTION HEADERS ── */
+.section {
+  position: relative; z-index: 1;
+  max-width: 1400px; margin: 0 auto;
+  padding: 6rem 3rem;
+}
+
+.section-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--brand-cyan); font-weight: 700; margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+
+.section-label::before {
+  content: ''; width: 30px; height: 1px;
+  background: var(--brand-cyan); box-shadow: 0 0 8px var(--brand-cyan);
+}
+
+.section-title {
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 800; margin-bottom: 1rem;
+}
+
+.section-title .gradient-text {
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-electric), #fff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.section-desc {
+  color: var(--text-muted); font-size: 1.05rem;
+  max-width: 600px; line-height: 1.75;
+}
+
+/* ── RETAIL PRODUCTS ── */
+.products-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 2rem; margin-top: 3rem;
+}
+
+.product-card {
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 12px; overflow: hidden;
+  transition: all 0.4s; cursor: pointer;
+  position: relative;
+}
+
+.product-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.05), transparent);
+  opacity: 0; transition: opacity 0.4s;
+}
+
+.product-card:hover::before { opacity: 1; }
+
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(0,229,255,0.3);
+  box-shadow: 0 0 40px rgba(0,229,255,0.1), 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.product-visual {
+  height: 220px; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.product-visual svg { width: 120px; height: 120px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3)); }
+
+.product-card:nth-child(1) .product-visual { background: linear-gradient(135deg, #FF6B2C12, #FF4E8C0A); }
+.product-card:nth-child(2) .product-visual { background: linear-gradient(135deg, #00E5FF08, #00BCD40A); }
+.product-card:nth-child(3) .product-visual { background: linear-gradient(135deg, #FFB80010, #FF6B2C08); }
+.product-card:nth-child(4) .product-visual { background: linear-gradient(135deg, #FF4E8C10, #E040FB08); }
+
+.product-tag {
+  position: absolute; top: 1rem; left: 1rem;
+  background: rgba(0,229,255,0.1); backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,229,255,0.2);
+  padding: 0.3rem 0.9rem; border-radius: 4px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--brand-cyan);
+}
+
+.product-body { padding: 1.5rem 2rem 2rem; position: relative; }
+
+.product-name {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem;
+}
+
+.product-desc {
+  color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-bottom: 1.25rem;
+}
+
+.product-benefits { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.benefit {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.84rem; color: var(--text-light);
+}
+
+.benefit-icon {
+  width: 22px; height: 22px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 0.65rem; font-weight: 700;
+}
+
+.product-card:nth-child(1) .benefit-icon { background: rgba(255,107,44,0.15); color: #FF6B2C; }
+.product-card:nth-child(2) .benefit-icon { background: rgba(0,229,255,0.12); color: var(--brand-cyan); }
+.product-card:nth-child(3) .benefit-icon { background: rgba(255,184,0,0.15); color: #FFB800; }
+.product-card:nth-child(4) .benefit-icon { background: rgba(255,78,140,0.15); color: #FF4E8C; }
+
+/* ── AI PROCUREMENT ── */
+.ai-section {
+  position: relative; z-index: 1;
+  overflow: hidden;
+}
+
+.ai-section::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 50% 50%, rgba(0,229,255,0.04), transparent);
+  pointer-events: none;
+}
+
+.ai-hero-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4rem; align-items: center; margin-top: 3rem;
+}
+
+.ai-features { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.ai-feature {
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 10px; padding: 1.4rem 1.8rem;
+  display: flex; gap: 1.25rem; align-items: flex-start;
+  transition: all 0.4s;
+  position: relative;
+}
+
+.ai-feature::before {
+  content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 2px;
+  background: var(--brand-cyan); opacity: 0; transition: opacity 0.4s;
+  box-shadow: 0 0 10px var(--brand-cyan);
+  border-radius: 2px;
+}
+
+.ai-feature:hover::before { opacity: 1; }
+
+.ai-feature:hover {
+  border-color: rgba(0,229,255,0.25);
+  transform: translateX(8px);
+  box-shadow: 0 0 30px rgba(0,229,255,0.06), 0 8px 30px rgba(0,0,0,0.2);
+  background: var(--bg-card-hover);
+}
+
+.ai-feat-icon {
+  width: 48px; height: 48px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 1.3rem;
+  background: rgba(0,229,255,0.06);
+  border: 1px solid rgba(0,229,255,0.15);
+}
+
+.ai-feat-title {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 1.05rem; margin-bottom: 0.3rem;
+}
+
+.ai-feat-desc {
+  color: var(--text-muted); font-size: 0.86rem; line-height: 1.65;
+}
+
+/* AI Visual - Orbital Diagram */
+.ai-visual { position: relative; display: flex; align-items: center; justify-content: center; }
+
+.ai-diagram { width: 100%; aspect-ratio: 1; position: relative; }
+
+.ai-node {
+  position: absolute;
+  background: var(--bg-card); border: 1px solid var(--glass-border);
+  border-radius: 12px; padding: 0.9rem;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.3rem; text-align: center;
+  width: 110px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.ai-node:hover { border-color: var(--brand-cyan); transform: scale(1.08); box-shadow: var(--glow-md); }
+
+.ai-node-icon {
+  width: 38px; height: 38px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.15);
+}
+
+.ai-node-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.3px;
+}
+
+.ai-node:nth-child(1) { top: 5%; left: 50%; transform: translateX(-50%); }
+.ai-node:nth-child(2) { top: 28%; right: 3%; }
+.ai-node:nth-child(3) { bottom: 28%; right: 3%; }
+.ai-node:nth-child(4) { bottom: 5%; left: 50%; transform: translateX(-50%); }
+.ai-node:nth-child(5) { bottom: 28%; left: 3%; }
+.ai-node:nth-child(6) { top: 28%; left: 3%; }
+
+.ai-center-node {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px; height: 120px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0 60px rgba(0,229,255,0.3), 0 0 120px rgba(0,229,255,0.1);
+  z-index: 2;
+  animation: center-pulse 3s ease-in-out infinite;
+}
+
+@keyframes center-pulse {
+  0%, 100% { box-shadow: 0 0 60px rgba(0,229,255,0.3), 0 0 120px rgba(0,229,255,0.1); }
+  50% { box-shadow: 0 0 80px rgba(0,229,255,0.4), 0 0 160px rgba(0,229,255,0.15); }
+}
+
+.ai-center-node span:first-child { font-size: 1.5rem; }
+.ai-center-node span:last-child {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; margin-top: 0.2rem;
+  text-transform: uppercase;
+}
+
+/* Connector lines */
+.ai-connectors {
+  position: absolute; inset: 0; z-index: 1;
+}
+
+.ai-connectors svg { width: 100%; height: 100%; }
+
+/* ── PROCESS FLOW ── */
+.flow-section { padding-top: 2rem; }
+
+.flow-steps {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 0; margin-top: 3rem; position: relative;
+}
+
+.flow-step { text-align: center; padding: 2rem 1rem; position: relative; }
+
+.flow-connector {
+  position: absolute; right: -2px; top: 3rem;
+  color: var(--brand-cyan); font-size: 1.2rem; opacity: 0.4;
+  text-shadow: 0 0 10px var(--brand-cyan);
+}
+
+.flow-step:last-child .flow-connector { display: none; }
+
+.flow-num {
+  width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 1rem;
+  background: transparent;
+  border: 2px solid var(--brand-cyan);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Exo 2', sans-serif; font-weight: 800; font-size: 1.1rem;
+  color: var(--brand-cyan);
+  box-shadow: 0 0 15px rgba(0,229,255,0.15), inset 0 0 15px rgba(0,229,255,0.05);
+  transition: all 0.3s;
+}
+
+.flow-step:hover .flow-num {
+  background: var(--brand-cyan); color: var(--bg-dark);
+  box-shadow: 0 0 30px rgba(0,229,255,0.3);
+}
+
+.flow-label {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem;
+}
+
+.flow-desc {
+  font-size: 0.78rem; color: var(--text-muted); line-height: 1.55;
+}
+
+/* ── CTA BANNER ── */
+.cta-section {
+  position: relative; z-index: 1;
+  max-width: 1400px; margin: 0 auto;
+  padding: 2rem 3rem 6rem;
+}
+
+.cta-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 4rem;
+  text-align: center; position: relative; overflow: hidden;
+}
+
+.cta-banner::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 50% 50% at 20% 20%, rgba(0,229,255,0.08), transparent),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(13,71,161,0.1), transparent);
+  pointer-events: none;
+}
+
+.cta-banner::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+  opacity: 0.5;
+}
+
+.cta-banner h2 {
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 800; margin-bottom: 1rem;
+  position: relative;
+}
+
+.cta-banner p {
+  font-size: 1.05rem; color: var(--text-muted); margin-bottom: 2rem;
+  max-width: 500px; margin-left: auto; margin-right: auto;
+  position: relative; line-height: 1.7;
+}
+
+.cta-banner .btn-primary {
+  margin: 0 auto; position: relative;
+}
+
+/* ── CONTACT FORM ── */
+.contact-section {
+  position: relative; z-index: 1;
+  max-width: 1400px; margin: 0 auto;
+  padding: 2rem 3rem 6rem;
+}
+
+.contact-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 1fr 1.2fr;
+}
+
+.contact-wrapper::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brand-cyan), transparent);
+  opacity: 0.5; z-index: 2;
+}
+
+.contact-info {
+  padding: 3.5rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(0,229,255,0.06), transparent),
+    radial-gradient(ellipse 60% 60% at 80% 20%, rgba(13,71,161,0.06), transparent);
+  border-right: 1px solid var(--glass-border);
+  display: flex; flex-direction: column; justify-content: center;
+}
+
+.contact-info h2 {
+  font-family: 'Exo 2', sans-serif;
+  font-size: clamp(1.8rem, 2.5vw, 2.4rem);
+  font-weight: 800; margin-bottom: 0.75rem; line-height: 1.15;
+}
+
+.contact-info > p {
+  color: var(--text-muted); font-size: 0.95rem; line-height: 1.7;
+  margin-bottom: 2.5rem; max-width: 380px;
+}
+
+.contact-detail-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(0,229,255,0.06);
+}
+
+.contact-detail-row:first-of-type { border-top: none; }
+
+.contact-detail-icon {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.12);
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
+
+.contact-detail-text { font-size: 0.9rem; }
+.contact-detail-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.1rem;
+}
+
+.contact-form-area {
+  padding: 3.5rem;
+  position: relative;
+}
+
+.contact-form-area::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 70% 50% at 80% 50%, rgba(0,229,255,0.03), transparent);
+}
+
+/* Tab Switcher */
+.form-tabs {
+  display: flex; gap: 0; margin-bottom: 2rem;
+  background: rgba(0,229,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px; overflow: hidden;
+  position: relative;
+}
+
+.form-tab {
+  flex: 1; padding: 0.85rem 1rem;
+  background: transparent; border: none; color: var(--text-muted);
+  font-family: 'Rajdhani', sans-serif; font-size: 0.88rem; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  position: relative; z-index: 1;
+}
+
+.form-tab.active {
+  color: var(--bg-dark);
+  background: var(--brand-cyan);
+  box-shadow: 0 0 20px rgba(0,229,255,0.25);
+}
+
+.form-tab:not(.active):hover {
+  color: var(--brand-cyan);
+  background: rgba(0,229,255,0.06);
+}
+
+.form-tab-icon { font-size: 1rem; }
+
+/* Form Fields */
+.form-group { margin-bottom: 1.1rem; position: relative; }
+
+.form-label {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem; font-weight: 600;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 0.4rem;
+}
+
+.form-label .required { color: var(--brand-cyan); margin-left: 2px; }
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%; padding: 0.8rem 1rem;
+  background: rgba(0,229,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px; color: var(--text-light);
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+  transition: all 0.3s;
+  outline: none;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: rgba(123,163,196,0.5);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--brand-cyan);
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.08), var(--glow-sm);
+  background: rgba(0,229,255,0.05);
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2300E5FF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select option { background: var(--bg-card); color: var(--text-light); }
+
+.form-textarea { min-height: 90px; resize: vertical; }
+
+.form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+}
+
+/* Dynamic fields */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Submit Button */
+.form-submit {
+  width: 100%; margin-top: 0.5rem;
+  background: linear-gradient(135deg, var(--brand-cyan), var(--brand-blue));
+  color: #fff; border: none; padding: 1rem 2rem;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(0,229,255,0.15), 0 4px 15px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  position: relative; overflow: hidden;
+}
+
+.form-submit::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.form-submit:hover::before { left: 100%; }
+.form-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 35px rgba(0,229,255,0.25), 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.form-submit:active { transform: translateY(0); }
+
+.form-submit.sending { pointer-events: none; opacity: 0.7; }
+
+/* Success/Error states */
+.form-message {
+  margin-top: 1rem; padding: 0.9rem 1.2rem; border-radius: 8px;
+  font-size: 0.88rem; display: none;
+  align-items: center; gap: 0.5rem;
+  animation: fadeSlideUp 0.4s ease;
+}
+
+.form-message.success {
+  display: flex;
+  background: rgba(0,229,255,0.08);
+  border: 1px solid rgba(0,229,255,0.2);
+  color: var(--brand-cyan);
+}
+
+.form-message.error {
+  display: flex;
+  background: rgba(255,78,140,0.08);
+  border: 1px solid rgba(255,78,140,0.2);
+  color: var(--brand-pink);
+}
+
+.form-privacy {
+  font-size: 0.72rem; color: var(--text-muted); margin-top: 0.8rem;
+  text-align: center; line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .contact-wrapper { grid-template-columns: 1fr; }
+  .contact-info { border-right: none; border-bottom: 1px solid var(--glass-border); padding: 2.5rem; }
+  .contact-form-area { padding: 2.5rem; }
+}
+
+@media (max-width: 768px) {
+  .contact-section { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .contact-info, .contact-form-area { padding: 2rem 1.5rem; }
+  .form-row { grid-template-columns: 1fr; }
+}
+
+/* ── FOOTER ── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--glass-border);
+  padding: 4rem 3rem 2rem;
+  max-width: 1400px; margin: 0 auto;
+}
+
+.footer-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem; margin-bottom: 3rem;
+}
+
+.footer-brand p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 1rem; max-width: 300px; }
+.footer-brand img { height: 44px; width: auto; filter: drop-shadow(0 0 8px rgba(0,229,255,0.2)); }
+
+.footer-col h4 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--brand-cyan);
+}
+
+.footer-col a {
+  display: block; color: var(--text-muted); text-decoration: none;
+  font-size: 0.88rem; padding: 0.3rem 0; transition: all 0.3s;
+}
+
+.footer-col a:hover { color: var(--brand-cyan); padding-left: 6px; }
+
+.footer-bottom {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 2rem;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; color: var(--text-muted);
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .hero-grid, .ai-hero-grid { grid-template-columns: 1fr; }
+  .products-grid { grid-template-columns: 1fr; }
+  .flow-steps { grid-template-columns: repeat(3, 1fr); }
+  .flow-connector { display: none; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); }
+  .stat-item:nth-child(2) { border-right: none; }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 0.8rem 1.5rem; }
+  .nav-links { display: none; }
+  .hero, .section { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .stats-bar { padding: 0 1.5rem; }
+  .stats-inner { grid-template-columns: 1fr 1fr; }
+  .flow-steps { grid-template-columns: 1fr 1fr; }
+  .cta-section { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .cta-banner { padding: 3rem 1.5rem; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .ai-diagram { display: none; }
+  .hamburger { display: block; }
+  .hero-logo-glow { max-width: 340px; }
+}
+
+.hamburger { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+.hamburger span { display: block; width: 24px; height: 2px; background: var(--brand-cyan); margin: 5px 0; transition: all 0.3s; box-shadow: 0 0 6px rgba(0,229,255,0.3); }
+
+@media (max-width: 768px) { .hamburger { display: block; } }
+
+/* Horizontal divider line */
+.divider {
+  max-width: 1400px; margin: 0 auto; padding: 0 3rem; position: relative; z-index: 1;
+}
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border), rgba(0,229,255,0.2), var(--glass-border), transparent);
+}
+
+/* ── PRODUCT IMAGES ── */
+.product-visual-img {
+  height: 280px;
+  padding: 0;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s;
+  filter: brightness(0.9);
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.05);
+  filter: brightness(1);
+}
+
+.product-visual-img .product-tag {
+  z-index: 2;
+}
+
+/* Overlay gradient on product images for legibility */
+.product-visual-img::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 60%;
+  background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="ambient-bg"></div>
+<div class="particles" id="particles"></div>
+
+<!-- ════════════ NAVIGATION ════════════ -->
+<nav>
+  <a href="#" class="logo-mark">
+    <img src="images/brightnext-goods-and-services-ltd.png" alt="BrightNext Goods and Services Ltd.">
+  </a>
+  <div class="nav-links">
+    <a href="#products">Products</a>
+    <a href="#ai-procurement">AI Solutions</a>
+    <a href="#process">Process</a>
+    <a href="#contact" class="nav-cta">Get Started</a>
+  </div>
+  <button class="hamburger" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ════════════ HERO ════════════ -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-badge"><span class="dot"></span> Innovating Retail &amp; Procurement</div>
+      <h1>Smart Products.<br><span class="gradient-text">Smarter Procurement.</span></h1>
+      <p>BrightNext delivers innovative retail products that solve everyday problems — and AI-powered procurement solutions that transform how enterprises buy, manage, and orchestrate their supply chain end-to-end.</p>
+      <div class="hero-actions">
+        <a href="#products" class="btn-primary">Explore Products ↓</a>
+        <a href="#ai-procurement" class="btn-secondary">AI Solutions →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-logo-container">
+        <div class="hero-logo-glow">
+          <img src="images/brightnext.png" alt="BrightNext">
+          <div class="hero-scan-line"></div>
+          <!-- Floating info cards -->
+          <div class="floating-card">
+            <div class="fc-icon">🛒</div>
+            <div><div class="fc-text">4 Product Lines</div><div class="fc-sub">Retail Essentials</div></div>
+          </div>
+          <div class="floating-card">
+            <div class="fc-icon">🤖</div>
+            <div><div class="fc-text">AI-Powered</div><div class="fc-sub">Procurement Suite</div></div>
+          </div>
+          <div class="floating-card">
+            <div class="fc-icon">⚡</div>
+            <div><div class="fc-text">End-to-End</div><div class="fc-sub">Process Automation</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ STATS ════════════ -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num">4</div><div class="stat-label">Retail Product Lines</div></div>
+    <div class="stat-item"><div class="stat-num">E2E</div><div class="stat-label">Process Orchestration</div></div>
+    <div class="stat-item"><div class="stat-num">AI</div><div class="stat-label">Driven Procurement</div></div>
+    <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">Smart Automation</div></div>
+  </div>
+</div>
+
+<div class="divider" style="margin-top: 4rem;"><div class="divider-line"></div></div>
+
+<!-- ════════════ RETAIL PRODUCTS ════════════ -->
+<section class="section" id="products">
+  <div class="section-label reveal">Our Retail Range</div>
+  <h2 class="section-title reveal">Products That <span class="gradient-text">Solve Real Problems</span></h2>
+  <p class="section-desc reveal">From everyday home essentials to kids' creativity — each product is designed with quality, innovation and value at its core.</p>
+
+  <div class="products-grid">
+
+    <!-- Product 1: Pet Hair Removal -->
+    <div class="product-card reveal">
+      <div class="product-visual product-visual-img">
+        <div class="product-tag">🐾 Best Seller</div>
+        <img src="images/pet-hair-removal-brush.png" alt="Pet Hair Removal Brush by BrightNext" class="product-img">
+      </div>
+      <div class="product-body">
+        <h3 class="product-name">Pet Hair Removal Roller</h3>
+        <p class="product-desc">Professional-grade lint roller engineered for stubborn pet hair. Works on furniture, clothing, car seats, and bedding with effortless glide technology.</p>
+        <div class="product-benefits">
+          <div class="benefit"><div class="benefit-icon">✓</div> Reusable &amp; eco-friendly — no sticky refills needed</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Works on all fabric types including delicate upholstery</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Self-cleaning base for one-handed operation</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Ergonomic handle reduces wrist fatigue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 2: Cable Organiser -->
+    <div class="product-card reveal">
+      <div class="product-visual product-visual-img">
+        <div class="product-tag">🔌 New Arrival</div>
+        <img src="images/smart-cable-organiser.jpg" alt="Smart Cable Organiser by BrightNext" class="product-img">
+      </div>
+      <div class="product-body">
+        <h3 class="product-name">Smart Cable Organiser</h3>
+        <p class="product-desc">Eliminate cable clutter with our modular desk and travel cable management system. Fits USB-C, Lightning, HDMI, and power cables in one sleek unit.</p>
+        <div class="product-benefits">
+          <div class="benefit"><div class="benefit-icon">✓</div> Modular 3-slot design for desk &amp; travel</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Weighted non-slip base keeps cables in reach</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Universal fit — USB-C, Lightning, HDMI &amp; more</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Premium silicone build, easy to clean</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 3: Car Charger -->
+    <div class="product-card reveal">
+      <div class="product-visual product-visual-img">
+        <div class="product-tag">⚡ MagSafe Ready</div>
+        <img src="images/car-magsafe-charger-mount.jpg" alt="Car MagSafe Charger Mount by BrightNext" class="product-img">
+      </div>
+      <div class="product-body">
+        <h3 class="product-name">Car MagSafe Charger Mount</h3>
+        <p class="product-desc">Snap-on magnetic car charger with 15W fast charging. MagSafe-compatible mount grips air vents securely for safe, hands-free navigation and charging.</p>
+        <div class="product-benefits">
+          <div class="benefit"><div class="benefit-icon">✓</div> 15W fast wireless charging with MagSafe alignment</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> 360° adjustable air vent mount for any angle</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> One-hand snap-on magnetic attachment</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Overheat &amp; overcharge smart protection</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 4: Kids Drawing Book -->
+    <div class="product-card reveal">
+      <div class="product-visual">
+        <div class="product-tag">🎨 Creative</div>
+        <svg viewBox="0 0 120 120" fill="none">
+          <rect x="25" y="25" rx="4" width="70" height="75" fill="#FF4E8C" opacity="0.06" stroke="#FF4E8C" stroke-width="1" stroke-opacity="0.2"/>
+          <line x1="35" y1="25" x2="35" y2="100" stroke="#FF4E8C" stroke-width="1" opacity="0.2"/>
+          <circle cx="35" cy="35" r="2" fill="#FF4E8C" opacity="0.3"/>
+          <circle cx="35" cy="50" r="2" fill="#FF4E8C" opacity="0.3"/>
+          <circle cx="35" cy="65" r="2" fill="#FF4E8C" opacity="0.3"/>
+          <circle cx="62" cy="48" r="10" fill="#FFB800" opacity="0.5"/>
+          <path d="M62 38L64 44L70 44L65 48L67 54L62 50L57 54L59 48L54 44L60 44Z" fill="white" opacity="0.7"/>
+          <path d="M42 72C42 72 52 55 62 55C72 55 82 72 82 72" stroke="#FF4E8C" stroke-width="2" fill="none" opacity="0.4"/>
+          <path d="M45 72C45 72 53.5 58 62 58C70.5 58 79 72 79 72" stroke="#FFB800" stroke-width="2" fill="none" opacity="0.4"/>
+          <path d="M48 72C48 72 55 61 62 61C69 61 76 72 76 72" stroke="#00E5FF" stroke-width="2" fill="none" opacity="0.4"/>
+          <line x1="75" y1="82" x2="85" y2="72" stroke="#FF4E8C" stroke-width="3" stroke-linecap="round"/>
+          <polygon points="75,82 73,86 77,84" fill="#FFB800"/>
+        </svg>
+      </div>
+      <div class="product-body">
+        <h3 class="product-name">Kids Creative Drawing Book</h3>
+        <p class="product-desc">Spark imagination with guided drawing activities, blank sketch pages, and interactive prompts designed for children ages 3–10. Thick, tear-resistant pages.</p>
+        <div class="product-benefits">
+          <div class="benefit"><div class="benefit-icon">✓</div> Age-graded activities from doodles to detailed art</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Thick 200gsm tear-resistant premium pages</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Stimulates fine motor skills &amp; creativity</div>
+          <div class="benefit"><div class="benefit-icon">✓</div> Screen-free entertainment — perfect for travel</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- ════════════ AI PROCUREMENT ════════════ -->
+<section class="ai-section" id="ai-procurement">
+  <div class="section">
+    <div class="section-label reveal">AI Procurement Solutions</div>
+    <h2 class="section-title reveal">Unlock <span class="gradient-text">Intelligent Procurement</span></h2>
+    <p class="section-desc reveal">Our AI-powered procurement platform orchestrates every step — from requisition to payment — eliminating bottlenecks, reducing costs, and delivering actionable insights.</p>
+
+    <div class="ai-hero-grid">
+      <div class="ai-features">
+        <div class="ai-feature reveal">
+          <div class="ai-feat-icon">🧠</div>
+          <div>
+            <div class="ai-feat-title">Smart Process Orchestration</div>
+            <div class="ai-feat-desc">AI dynamically routes approvals, matches POs, and auto-resolves exceptions. Reduce cycle times by up to 70% with intelligent workflow automation.</div>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feat-icon">📊</div>
+          <div>
+            <div class="ai-feat-title">Predictive Spend Analytics</div>
+            <div class="ai-feat-desc">Machine learning analyses spending patterns, detects anomalies, and forecasts demand so your procurement team stays ahead of budget overruns.</div>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feat-icon">🔗</div>
+          <div>
+            <div class="ai-feat-title">End-to-End Visibility</div>
+            <div class="ai-feat-desc">A single pane of glass from requisition through invoice reconciliation. Real-time dashboards, audit trails, and compliance checks built in.</div>
+          </div>
+        </div>
+        <div class="ai-feature reveal">
+          <div class="ai-feat-icon">🤝</div>
+          <div>
+            <div class="ai-feat-title">Supplier Intelligence</div>
+            <div class="ai-feat-desc">AI-scored supplier performance, automated risk assessment, and smart contract recommendations that strengthen your vendor ecosystem.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-visual reveal">
+        <div class="ai-diagram">
+          <svg class="ai-connectors" viewBox="0 0 400 400">
+            <defs>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#00E5FF;stop-opacity:0.15"/>
+                <stop offset="50%" style="stop-color:#00E5FF;stop-opacity:0.3"/>
+                <stop offset="100%" style="stop-color:#00E5FF;stop-opacity:0.15"/>
+              </linearGradient>
+            </defs>
+            <line x1="200" y1="70" x2="200" y2="165" stroke="url(#lineGrad)" stroke-width="1"/>
+            <line x1="330" y1="140" x2="255" y2="185" stroke="url(#lineGrad)" stroke-width="1"/>
+            <line x1="330" y1="260" x2="255" y2="215" stroke="url(#lineGrad)" stroke-width="1"/>
+            <line x1="200" y1="330" x2="200" y2="235" stroke="url(#lineGrad)" stroke-width="1"/>
+            <line x1="70" y1="260" x2="145" y2="215" stroke="url(#lineGrad)" stroke-width="1"/>
+            <line x1="70" y1="140" x2="145" y2="185" stroke="url(#lineGrad)" stroke-width="1"/>
+          </svg>
+          <div class="ai-node"><div class="ai-node-icon">📋</div><div class="ai-node-text">Requisition</div></div>
+          <div class="ai-node"><div class="ai-node-icon">✅</div><div class="ai-node-text">Approval</div></div>
+          <div class="ai-node"><div class="ai-node-icon">📦</div><div class="ai-node-text">Purchase Order</div></div>
+          <div class="ai-node"><div class="ai-node-icon">🚚</div><div class="ai-node-text">Receiving</div></div>
+          <div class="ai-node"><div class="ai-node-icon">🧾</div><div class="ai-node-text">Invoice Match</div></div>
+          <div class="ai-node"><div class="ai-node-icon">💳</div><div class="ai-node-text">Payment</div></div>
+          <div class="ai-center-node">
+            <span>🤖</span>
+            <span>BrightNext AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- ════════════ PROCESS FLOW ════════════ -->
+<section class="section flow-section" id="process">
+  <div class="section-label reveal">How It Works</div>
+  <h2 class="section-title reveal">From Chaos to <span class="gradient-text">Orchestrated Precision</span></h2>
+  <p class="section-desc reveal">Five steps to transform your procurement operations with BrightNext AI.</p>
+
+  <div class="flow-steps">
+    <div class="flow-step reveal">
+      <div class="flow-num">1</div>
+      <div class="flow-label">Connect</div>
+      <div class="flow-desc">Integrate with your existing ERP, finance, and vendor systems in days.</div>
+      <span class="flow-connector">→</span>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">2</div>
+      <div class="flow-label">Analyse</div>
+      <div class="flow-desc">AI ingests historical data to learn your workflows and spend patterns.</div>
+      <span class="flow-connector">→</span>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">3</div>
+      <div class="flow-label">Orchestrate</div>
+      <div class="flow-desc">Smart routing, auto-approvals, and exception handling across every process.</div>
+      <span class="flow-connector">→</span>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">4</div>
+      <div class="flow-label">Optimise</div>
+      <div class="flow-desc">Continuous learning surfaces savings and compliance gaps in real time.</div>
+      <span class="flow-connector">→</span>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">5</div>
+      <div class="flow-label">Scale</div>
+      <div class="flow-desc">Expand across business units and geographies with consistent governance.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ CONTACT / LET'S TALK ════════════ -->
+<section class="contact-section" id="contact">
+  <div class="section-label reveal" style="text-align:center; justify-content:center; margin-bottom: 0.5rem;">Let's Talk</div>
+  <h2 class="section-title reveal" style="text-align:center; margin-bottom: 0.5rem;">Ready to <span class="gradient-text">Get Started?</span></h2>
+  <p class="section-desc reveal" style="text-align:center; margin: 0 auto 3rem; max-width: 560px;">Tell us what you need — whether it's retail products or AI-driven procurement. We'll get back to you within 24 hours.</p>
+
+  <div class="contact-wrapper reveal">
+    <!-- Left: Info Panel -->
+    <div class="contact-info">
+      <h2>Let's Build<br><span class="gradient-text">Something Great</span></h2>
+      <p>Choose your area of interest and share your requirements. Our team will tailor a response to your exact needs.</p>
+
+      <div class="contact-detail-row">
+        <div class="contact-detail-icon">📧</div>
+        <div>
+          <div class="contact-detail-label">Email</div>
+          <div class="contact-detail-text">brightnext.uk@gmail.com</div>
+        </div>
+      </div>
+      <div class="contact-detail-row">
+        <div class="contact-detail-icon">📍</div>
+        <div>
+          <div class="contact-detail-label">Location</div>
+          <div class="contact-detail-text">London, United Kingdom</div>
+        </div>
+      </div>
+      <div class="contact-detail-row">
+        <div class="contact-detail-icon">⚡</div>
+        <div>
+          <div class="contact-detail-label">Response Time</div>
+          <div class="contact-detail-text">Within 24 hours</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Form Panel -->
+    <div class="contact-form-area">
+
+      <!-- Tabs: Retail vs AI -->
+      <div class="form-tabs">
+        <button class="form-tab active" data-tab="retail" onclick="switchTab('retail')">
+          <span class="form-tab-icon">🛒</span> Retail Products
+        </button>
+        <button class="form-tab" data-tab="procurement" onclick="switchTab('procurement')">
+          <span class="form-tab-icon">🤖</span> AI Procurement
+        </button>
+      </div>
+
+      <!-- The Form -->
+      <div id="contactForm">
+
+        <!-- Common Fields -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="formName" placeholder="John Smith" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <input type="email" class="form-input" id="formEmail" placeholder="john@company.com" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-input" id="formPhone" placeholder="+44 7700 900000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company / Organisation</label>
+            <input type="text" class="form-input" id="formCompany" placeholder="Your company name">
+          </div>
+        </div>
+
+        <!-- ── RETAIL-SPECIFIC FIELDS ── -->
+        <div class="tab-content active" id="tab-retail">
+          <div class="form-group">
+            <label class="form-label">Product Interest <span class="required">*</span></label>
+            <select class="form-select" id="retailProduct">
+              <option value="" disabled selected>Select a product category</option>
+              <option value="Pet Hair Removal Brush">🐾 Pet Hair Removal Brush</option>
+              <option value="Smart Cable Organiser">🔌 Smart Cable Organiser</option>
+              <option value="Car MagSafe Charger Mount">⚡ Car MagSafe Charger Mount</option>
+              <option value="Kids Creative Drawing Book">🎨 Kids Creative Drawing Book</option>
+              <option value="Multiple Products">📦 Multiple Products</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Enquiry Type</label>
+              <select class="form-select" id="retailType">
+                <option value="" disabled selected>Select type</option>
+                <option value="Wholesale / Bulk Order">Wholesale / Bulk Order</option>
+                <option value="Retail Partnership">Retail Partnership</option>
+                <option value="Product Information">Product Information</option>
+                <option value="Distributor Enquiry">Distributor Enquiry</option>
+                <option value="Custom / White Label">Custom / White Label</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estimated Quantity</label>
+              <select class="form-select" id="retailQty">
+                <option value="" disabled selected>Quantity range</option>
+                <option value="1-50 units">1 – 50 units</option>
+                <option value="50-200 units">50 – 200 units</option>
+                <option value="200-1000 units">200 – 1,000 units</option>
+                <option value="1000+ units">1,000+ units</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Requirements / Message</label>
+            <textarea class="form-textarea" id="retailMsg" placeholder="Tell us about your requirements — product quantities, delivery location, customisation needs, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- ── PROCUREMENT AI FIELDS ── -->
+        <div class="tab-content" id="tab-procurement">
+          <div class="form-group">
+            <label class="form-label">Solution Interest <span class="required">*</span></label>
+            <select class="form-select" id="aiSolution">
+              <option value="" disabled selected>Select a solution area</option>
+              <option value="Process Orchestration">🧠 Smart Process Orchestration</option>
+              <option value="Spend Analytics">📊 Predictive Spend Analytics</option>
+              <option value="End-to-End Visibility">🔗 End-to-End Visibility</option>
+              <option value="Supplier Intelligence">🤝 Supplier Intelligence</option>
+              <option value="Full Platform">🚀 Full AI Procurement Platform</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Company Size</label>
+              <select class="form-select" id="aiCompanySize">
+                <option value="" disabled selected>Select range</option>
+                <option value="1-50 employees">1 – 50 employees</option>
+                <option value="50-250 employees">50 – 250 employees</option>
+                <option value="250-1000 employees">250 – 1,000 employees</option>
+                <option value="1000+ employees">1,000+ employees</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Current ERP / System</label>
+              <input type="text" class="form-input" id="aiERP" placeholder="e.g. SAP, Oracle, NetSuite">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Procurement Challenges / Requirements</label>
+            <textarea class="form-textarea" id="aiMsg" placeholder="Describe your current procurement pain points — manual approvals, lack of visibility, supplier management issues, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button class="form-submit" id="formSubmitBtn" onclick="submitForm()">
+          <span id="btnText">Send Enquiry →</span>
+          <span id="btnSpinner" style="display:none;">Sending...</span>
+        </button>
+
+        <div class="form-message" id="formMessage"></div>
+
+        <div class="form-privacy">
+          By submitting, you agree to BrightNext processing your data to respond to your enquiry.<br>
+          We respect your privacy and will never share your information.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ FOOTER ════════════ -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <img src="images/brightnext.png" alt="BrightNext">
+      <p>Innovating at the intersection of everyday retail and enterprise AI. Quality products, intelligent solutions.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Products</h4>
+      <a href="#">Pet Hair Removal</a>
+      <a href="#">Cable Organiser</a>
+      <a href="#">MagSafe Charger</a>
+      <a href="#">Kids Drawing Book</a>
+    </div>
+    <div class="footer-col">
+      <h4>AI Solutions</h4>
+      <a href="#">Process Orchestration</a>
+      <a href="#">Spend Analytics</a>
+      <a href="#">Supplier Intelligence</a>
+      <a href="#">Platform Demo</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About Us</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+      <a href="#">Privacy Policy</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 BrightNext Goods and Services Ltd. All rights reserved.</span>
+    <span>London, United Kingdom</span>
+  </div>
+</footer>
+
+<!-- ════════════ SCRIPTS ════════════ -->
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 100);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+reveals.forEach(el => observer.observe(el));
+
+// Nav scroll effect
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  if (window.scrollY > 60) {
+    nav.style.background = 'rgba(2,10,20,0.92)';
+    nav.style.borderBottomColor = 'rgba(0,229,255,0.15)';
+  } else {
+    nav.style.background = 'rgba(2,10,20,0.75)';
+    nav.style.borderBottomColor = 'rgba(0,229,255,0.12)';
+  }
+});
+
+// Generate floating particles
+const particlesEl = document.getElementById('particles');
+for (let i = 0; i < 40; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.left = Math.random() * 100 + '%';
+  p.style.animationDuration = (8 + Math.random() * 12) + 's';
+  p.style.animationDelay = (Math.random() * 10) + 's';
+  p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+  p.style.opacity = 0;
+  particlesEl.appendChild(p);
+}
+
+// ═══════════ CONTACT FORM LOGIC ═══════════
+
+let activeTab = 'retail';
+
+function switchTab(tab) {
+  activeTab = tab;
+  // Toggle tab buttons
+  document.querySelectorAll('.form-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  // Toggle content panels
+  document.querySelectorAll('.tab-content').forEach(panel => {
+    panel.classList.toggle('active', panel.id === 'tab-' + tab);
+  });
+  // Clear any existing messages
+  const msg = document.getElementById('formMessage');
+  msg.className = 'form-message';
+  msg.style.display = 'none';
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  return el.value ? el.value.trim() : '';
+}
+
+function submitForm() {
+  const msgEl = document.getElementById('formMessage');
+  msgEl.className = 'form-message';
+  msgEl.style.display = 'none';
+
+  // Common fields
+  const name = getVal('formName');
+  const email = getVal('formEmail');
+  const phone = getVal('formPhone');
+  const company = getVal('formCompany');
+
+  // Validation
+  if (!name) { showError('Please enter your full name.'); return; }
+  if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return; }
+
+  let subject = '';
+  let body = '';
+
+  if (activeTab === 'retail') {
+    const product = getVal('retailProduct');
+    const type = getVal('retailType');
+    const qty = getVal('retailQty');
+    const message = getVal('retailMsg');
+
+    if (!product) { showError('Please select a product category.'); return; }
+
+    subject = 'Retail Enquiry: ' + product + ' — ' + name;
+    body = buildBody('RETAIL PRODUCT ENQUIRY', [
+      ['Name', name],
+      ['Email', email],
+      ['Phone', phone],
+      ['Company', company],
+      ['Product Interest', product],
+      ['Enquiry Type', type],
+      ['Estimated Quantity', qty],
+      ['Requirements / Message', message]
+    ]);
+
+  } else {
+    const solution = getVal('aiSolution');
+    const companySize = getVal('aiCompanySize');
+    const erp = getVal('aiERP');
+    const message = getVal('aiMsg');
+
+    if (!solution) { showError('Please select a solution area.'); return; }
+
+    subject = 'AI Procurement Enquiry: ' + solution + ' — ' + name;
+    body = buildBody('AI PROCUREMENT SOLUTIONS ENQUIRY', [
+      ['Name', name],
+      ['Email', email],
+      ['Phone', phone],
+      ['Company', company],
+      ['Solution Interest', solution],
+      ['Company Size', companySize],
+      ['Current ERP / System', erp],
+      ['Procurement Challenges', message]
+    ]);
+  }
+
+  // Show sending state briefly
+  const btn = document.getElementById('formSubmitBtn');
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  btn.classList.add('sending');
+  btnText.style.display = 'none';
+  btnSpinner.style.display = 'inline';
+
+  // Build mailto URL and open
+  const mailtoUrl = 'mailto:brightnext.uk@gmail.com'
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+
+  // Small delay for UX, then open mail client
+  setTimeout(() => {
+    window.location.href = mailtoUrl;
+
+    // Reset button
+    btn.classList.remove('sending');
+    btnText.style.display = 'inline';
+    btnSpinner.style.display = 'none';
+
+    // Show success
+    showSuccess('Your email client has been opened with the enquiry details. Please click Send in your email app to deliver your message to BrightNext.');
+  }, 600);
+}
+
+function buildBody(heading, fields) {
+  let body = '═══════════════════════════════\n';
+  body += '  ' + heading + '\n';
+  body += '  BrightNext Goods and Services Ltd.\n';
+  body += '═══════════════════════════════\n\n';
+
+  fields.forEach(([label, value]) => {
+    if (value) {
+      body += label + ': ' + value + '\n';
+    }
+  });
+
+  body += '\n───────────────────────────────\n';
+  body += 'Sent via BrightNext Website Contact Form\n';
+  body += 'Date: ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return body;
+}
+
+function showError(text) {
+  const msgEl = document.getElementById('formMessage');
+  msgEl.textContent = '';
+  msgEl.innerHTML = '⚠ ' + text;
+  msgEl.className = 'form-message error';
+  msgEl.style.display = 'flex';
+  msgEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showSuccess(text) {
+  const msgEl = document.getElementById('formMessage');
+  msgEl.textContent = '';
+  msgEl.innerHTML = '✓ ' + text;
+  msgEl.className = 'form-message success';
+  msgEl.style.display = 'flex';
+  msgEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+</body>
+</html>

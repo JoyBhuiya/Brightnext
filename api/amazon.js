@@ -248,6 +248,13 @@ module.exports = async function handler(req, res) {
   }
 };
 
+// Exposed for reuse by one-off scripts (e.g. scripts/list-asins.js) — the default
+// export above is what Vercel actually invokes as the serverless handler.
+module.exports.SP_API_HOST = SP_API_HOST;
+module.exports.getAccessToken = getAccessToken;
+module.exports.spApiGet = spApiGet;
+module.exports.spApiPost = spApiPost;
+
 // ── Low-level HTTPS helpers (no external deps needed) ──
 function httpsPost(hostname, path, body, headers) {
   return new Promise((resolve, reject) => {

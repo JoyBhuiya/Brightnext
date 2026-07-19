@@ -12,20 +12,7 @@ const STATIC_DIR = path.join(ROOT, 'BrightNext Website');
 const API_DIR = path.join(ROOT, 'api');
 
 // ── Load .env so local dev sees the same vars as Vercel's env config ──
-const ENV_PATH = path.join(ROOT, '.env');
-if (fs.existsSync(ENV_PATH)) {
-  let envContent = fs.readFileSync(ENV_PATH, 'utf8');
-  if (envContent.charCodeAt(0) === 0xFEFF) envContent = envContent.slice(1); // strip BOM (Notepad UTF-8)
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eq = trimmed.indexOf('=');
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
-    if (key && !(key in process.env)) process.env[key] = value;
-  }
-}
+require('./load-env')(ROOT);
 
 const PORT = process.env.PORT || 3000;
 

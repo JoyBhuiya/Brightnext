@@ -27,7 +27,8 @@ Vercel serverless function that:
 
 1. Exchanges an LWA refresh token for an access token (cached per cold-start).
 2. Calls the Amazon SP-API (EU endpoint) with the LWA access token — no AWS SigV4 signing needed (Amazon deprecated that requirement; only the `x-amz-access-token` header is required now).
-3. Fetches order metrics + recent orders, transforms them into the shape the dashboards render, and caches the result for 15 minutes.
+3. Fetches order metrics + recent orders for the selected range (`7d`/`30d`/`90d`/`ytd`), computed using timezone-aware day boundaries (`Europe/London` by default) rather than raw UTC, and caches the result for 15 minutes.
+4. Requests Amazon's async Reports API (`GET_SALES_AND_TRAFFIC_REPORT`) for real per-ASIN units/revenue, advancing the create → poll → download lifecycle by one step per request (report generation can take a minute or more; it never blocks a request waiting for it — the next request picks up where it left off). Matched against the dashboard's own `PRODUCTS` config by ASIN to compute real margin/ROI (Amazon has no visibility into your COGS/fees/PPC spend, so those always come from your own config).
 
 Returns `503` if credentials are unset and `502` on upstream SP-API failure.
 
@@ -65,6 +66,23 @@ Alternatively, use the real Vercel CLI:
 npm i -g vercel        # one-time
 vercel dev             # runs static site + /api/amazon locally, reading .env automatically
 ```
+
+### Finding your real ASINs
+
+The dashboard's `PRODUCTS` array (in `BrightNext Website/brightnext-amazon-dashboard.html`)
+needs each product's real Amazon ASIN for the per-product data to match Seller Central —
+placeholder ASINs (`B0DXXXXxxx`) won't match anything. Instead of hunting through Seller
+Central, run:
+
+```bash
+npm run list-asins     # requires .env with LWA credentials (see above)
+```
+
+This pulls your actual listings report and prints each SKU/ASIN/title, flagging likely
+matches to BrightNext's known products — copy the ASINs into `PRODUCTS`.
+
+Your app also needs **Reports API access** granted in Seller Central → Apps & Services →
+Develop Apps → your app for both this and the dashboard's real per-product data to work.
 
 ## Deploy
 

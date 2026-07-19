@@ -802,6 +802,7 @@ tbody tr:hover { background:rgba(0,229,255,0.03); }
 // Declared early: simulate() (called below, at page-init time) depends on currentRange.
 let isLiveMode = false;
 let currentRange = '30d';
+let liveTotals = null; // { totalRevenue, totalUnits, returnRate } from the aggregate SP-API endpoint
 
 const PRODUCTS = [
   {
@@ -876,6 +877,31 @@ function daysForRange(range) {
   return parseInt(range, 10) || 30;
 }
 
+// ── Cost/margin/ROI math shared by simulated AND real (units, revenue) data.
+// Amazon has no visibility into our COGS/PPC/storage/etc., so those always
+// come from each product's own config here — only units and revenue can ever
+// come from a real source (SP-API aggregate totals, or per-ASIN report data).
+function deriveProductMetrics(p, units, revenue) {
+  const totalCogs = +(units * p.cogs).toFixed(2);
+  const amazonReferral = +(revenue * p.amazonFeeRate).toFixed(2);
+  const fbaTotal = +(units * p.fbaFee).toFixed(2);
+  const ppcSpend = +(units * p.ppcCostPerUnit).toFixed(2);
+  const shipping = +(units * p.shippingIn).toFixed(2);
+  const storage = +(units * p.storageFee).toFixed(2);
+  const returnCost = +(Math.round(units * p.returnRate) * (p.cogs + p.fbaFee)).toFixed(2);
+  const totalFees = +(amazonReferral + fbaTotal).toFixed(2);
+  const totalCost = +(totalCogs + totalFees + ppcSpend + shipping + storage + returnCost).toFixed(2);
+  const netProfit = +(revenue - totalCost).toFixed(2);
+  const margin = revenue > 0 ? +((netProfit / revenue) * 100).toFixed(1) : 0;
+  const roi = totalCost > 0 ? +((netProfit / totalCost) * 100).toFixed(0) : 0;
+
+  return {
+    units, revenue, totalCogs, amazonReferral, fbaTotal,
+    ppcSpend, shipping, storage, returnCost, totalFees, totalCost,
+    netProfit, margin, roi
+  };
+}
+
 // ── Simulate realistic data with slight randomness ──
 function simulate() {
   const jitter = () => 0.9 + Math.random() * 0.2;
@@ -884,25 +910,8 @@ function simulate() {
   return PRODUCTS.map(p => {
     const units = Math.round(p.baseUnits * periodScale * jitter());
     const revenue = +(units * p.unitPrice).toFixed(2);
-    const totalCogs = +(units * p.cogs).toFixed(2);
-    const amazonReferral = +(revenue * p.amazonFeeRate).toFixed(2);
-    const fbaTotal = +(units * p.fbaFee).toFixed(2);
-    const ppcSpend = +(units * p.ppcCostPerUnit).toFixed(2);
-    const shipping = +(units * p.shippingIn).toFixed(2);
-    const storage = +(units * p.storageFee).toFixed(2);
-    const returnCost = +(Math.round(units * p.returnRate) * (p.cogs + p.fbaFee)).toFixed(2);
-    const totalFees = +(amazonReferral + fbaTotal).toFixed(2);
-    const totalCost = +(totalCogs + totalFees + ppcSpend + shipping + storage + returnCost).toFixed(2);
-    const netProfit = +(revenue - totalCost).toFixed(2);
-    const margin = +((netProfit / revenue) * 100).toFixed(1);
-    const roi = +(((revenue - totalCost) / totalCost) * 100).toFixed(0);
     const growthPct = +((p.growth + (Math.random() * 0.06 - 0.03)) * 100).toFixed(1);
-
-    return {
-      ...p, units, revenue, totalCogs, amazonReferral, fbaTotal,
-      ppcSpend, shipping, storage, returnCost, totalFees, totalCost,
-      netProfit, margin, roi, growthPct
-    };
+    return { ...p, ...deriveProductMetrics(p, units, revenue), growthPct };
   }).sort((a, b) => b.margin - a.margin); // Sort by margin desc
 }
 
@@ -956,8 +965,19 @@ function renderKPIs() {
     return acc;
   }, { revenue: 0, units: 0, profit: 0 });
 
-  const avgMargin = (totals.profit / totals.revenue * 100).toFixed(1);
-  const avgReturn = (currentData.reduce((s, p) => s + p.returnRate, 0) / currentData.length * 100).toFixed(1);
+  // Revenue/units/returns: prefer the authoritative aggregate SP-API totals when
+  // live, since currentData may only cover our configured PRODUCTS (an unmatched
+  // real ASIN would otherwise be silently missing from these figures). Profit
+  // stays derived from currentData — Amazon has no visibility into our COGS/fees.
+  if (isLiveMode && liveTotals) {
+    totals.revenue = liveTotals.totalRevenue;
+    totals.units = liveTotals.totalUnits;
+  }
+  const avgReturn = isLiveMode && liveTotals
+    ? (liveTotals.returnRate * 100).toFixed(1)
+    : (currentData.reduce((s, p) => s + p.returnRate, 0) / currentData.length * 100).toFixed(1);
+
+  const avgMargin = totals.revenue > 0 ? (totals.profit / totals.revenue * 100).toFixed(1) : '0.0';
 
   document.getElementById('kpiRevenue').textContent = '£' + Math.round(totals.revenue).toLocaleString();
   document.getElementById('kpiUnits').textContent = totals.units.toLocaleString();
@@ -1342,25 +1362,38 @@ async function fetchAndApplyLive(showErrors = false) {
   }
 }
 
-// Overlay live API totals onto the KPI cards; product table stays demo until
-// the Reports API (async) is wired up for per-ASIN breakdowns.
+// data.products (from the Reports API) is real per-ASIN { asin, units, revenue }
+// once Amazon has finished generating that range's report — until then it's [].
+// When we have it, use it directly (true per-product parity with Seller Central,
+// for any ASIN present in our own PRODUCTS config). Otherwise fall back to
+// scaling the demo product mix so at least the KPI totals are accurate.
 function applyLiveData(data) {
   if (!data || !data.live) return;
 
-  // Recalculate demo product mix but scale totals to match live figures
-  currentData = simulate();
-  const demoRevTotal = currentData.reduce((s, p) => s + p.revenue, 0);
-  const scale = demoRevTotal > 0 ? data.totalRevenue / demoRevTotal : 1;
+  liveTotals = { totalRevenue: data.totalRevenue, totalUnits: data.totalUnits, returnRate: data.returnRate };
 
-  currentData = currentData.map(p => {
-    const revenue = +(p.revenue * scale).toFixed(2);
-    const units = Math.round(p.units * scale);
-    const totalCost = +(p.totalCost * scale).toFixed(2);
-    const netProfit = +(revenue - totalCost).toFixed(2);
-    const margin = revenue > 0 ? +((netProfit / revenue) * 100).toFixed(1) : p.margin;
-    const roi = totalCost > 0 ? +(((revenue - totalCost) / totalCost) * 100).toFixed(0) : p.roi;
-    return { ...p, revenue, units, netProfit, totalCost, margin, roi };
-  }).sort((a, b) => b.margin - a.margin);
+  const realByAsin = new Map((data.products || []).map(r => [r.asin, r]));
+  const haveRealProducts = PRODUCTS.some(p => realByAsin.has(p.asin));
+
+  if (haveRealProducts) {
+    currentData = PRODUCTS.map(p => {
+      const real = realByAsin.get(p.asin);
+      const units = real?.units ?? 0;
+      const revenue = real?.revenue ?? 0;
+      return { ...p, ...deriveProductMetrics(p, units, revenue), growthPct: +(p.growth * 100).toFixed(1) };
+    }).sort((a, b) => b.margin - a.margin);
+  } else {
+    // Report not ready yet (or none of our configured ASINs matched) — scale the
+    // demo product mix so the table stays proportionate to the real totals.
+    currentData = simulate();
+    const demoRevTotal = currentData.reduce((s, p) => s + p.revenue, 0);
+    const scale = demoRevTotal > 0 ? data.totalRevenue / demoRevTotal : 1;
+    currentData = currentData.map(p => {
+      const units = Math.round(p.units * scale);
+      const revenue = +(p.revenue * scale).toFixed(2);
+      return { ...p, ...deriveProductMetrics(p, units, revenue), growthPct: p.growthPct };
+    }).sort((a, b) => b.margin - a.margin);
+  }
 
   renderWinner();
   renderKPIs();

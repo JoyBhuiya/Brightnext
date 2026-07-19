@@ -3,6 +3,7 @@
 // SP-API no longer requires AWS SigV4 signing — LWA access token auth only.
 
 const https = require('https');
+const zlib = require('zlib');
 
 const {
   LWA_CLIENT_ID,
@@ -20,6 +21,13 @@ let tokenExpiry = 0;
 // ── Simple in-memory data cache (15 min TTL) ──
 const dataCache = {};
 const CACHE_TTL = 15 * 60 * 1000;
+
+// ── Per-ASIN report lifecycle cache (report generation is async on Amazon's
+// side and can take anywhere from seconds to a few minutes — never block a
+// request waiting for it; advance the state machine by one step per request
+// and let the next request, e.g. the 15-min auto-refresh, pick up the result) ──
+const reportsCache = {}; // key -> { status: 'pending'|'ready', reportId, products, ts }
+const REPORT_CACHE_TTL = 30 * 60 * 1000;
 
 // ── LWA: exchange refresh token for access token ──
 async function getAccessToken() {
@@ -41,13 +49,16 @@ async function getAccessToken() {
   return cachedToken;
 }
 
-// ── SP-API request helper ──
-async function spApiGet(path, queryParams, accessToken) {
-  const host = 'sellingpartnerapi-eu.amazon.com';
-  const qs = new URLSearchParams(queryParams).toString();
-  const headers = { 'x-amz-access-token': accessToken };
+// ── SP-API request helpers ──
+const SP_API_HOST = 'sellingpartnerapi-eu.amazon.com';
 
-  return httpsGet(host, `${path}?${qs}`, headers);
+async function spApiGet(path, queryParams, accessToken) {
+  const qs = new URLSearchParams(queryParams).toString();
+  return httpsGet(SP_API_HOST, `${path}?${qs}`, { 'x-amz-access-token': accessToken });
+}
+
+async function spApiPost(path, body, accessToken) {
+  return httpsPostJson(SP_API_HOST, path, body, { 'x-amz-access-token': accessToken });
 }
 
 // ── Timezone-aware date helpers (no external deps) ──
@@ -101,8 +112,83 @@ async function fetchOrders(accessToken, interval) {
   }, accessToken);
 }
 
+// ── Reports API: real per-ASIN units + revenue (Business Reports data) ──
+async function createSalesReport(accessToken, interval) {
+  const res = await spApiPost('/reports/2021-06-30/reports', {
+    reportType: 'GET_SALES_AND_TRAFFIC_REPORT',
+    marketplaceIds: [MARKETPLACE_ID],
+    dataStartTime: interval.startDate.toISOString(),
+    dataEndTime: interval.endDate.toISOString(),
+  }, accessToken);
+  return res.reportId;
+}
+
+async function getReportStatus(accessToken, reportId) {
+  return httpsGet(SP_API_HOST, `/reports/2021-06-30/reports/${reportId}`, { 'x-amz-access-token': accessToken });
+}
+
+async function getReportDocument(accessToken, reportDocumentId) {
+  return httpsGet(SP_API_HOST, `/reports/2021-06-30/documents/${reportDocumentId}`, { 'x-amz-access-token': accessToken });
+}
+
+async function downloadAndParseReport(doc) {
+  let buf = await httpsGetBuffer(doc.url);
+  if (doc.compressionAlgorithm === 'GZIP') buf = zlib.gunzipSync(buf);
+  return JSON.parse(buf.toString('utf8'));
+}
+
+function extractProductsFromReport(report) {
+  const rows = report?.salesAndTrafficByAsin ?? [];
+  return rows.map(r => ({
+    asin: r.childAsin || r.parentAsin,
+    units: r.salesByAsin?.unitsOrdered ?? 0,
+    revenue: parseFloat(r.salesByAsin?.orderedProductSales?.amount ?? 0),
+  }));
+}
+
+// Advances the report lifecycle for this range by exactly one step per call —
+// never blocks waiting for Amazon to finish generating the report. Returns
+// whatever per-ASIN data is currently known (possibly []); the *next* request
+// (auto-refresh every 15 min, or a manual refresh) will pick up further progress.
+async function advanceProductsReport(accessToken, interval) {
+  const key = interval.key;
+  const entry = reportsCache[key];
+
+  if (entry?.status === 'ready' && Date.now() - entry.ts < REPORT_CACHE_TTL) {
+    return entry.products;
+  }
+
+  if (entry?.status === 'pending') {
+    try {
+      const status = await getReportStatus(accessToken, entry.reportId);
+      if (status.processingStatus === 'DONE' && status.reportDocumentId) {
+        const doc = await getReportDocument(accessToken, status.reportDocumentId);
+        const report = await downloadAndParseReport(doc);
+        const products = extractProductsFromReport(report);
+        reportsCache[key] = { status: 'ready', products, ts: Date.now() };
+        return products;
+      }
+      if (status.processingStatus === 'FATAL' || status.processingStatus === 'CANCELLED') {
+        delete reportsCache[key]; // let the next request start over
+      }
+    } catch (err) {
+      console.error('Report status check failed:', err.message);
+    }
+    return entry.products ?? [];
+  }
+
+  // Nothing in flight for this range — kick one off, don't wait for it.
+  try {
+    const reportId = await createSalesReport(accessToken, interval);
+    reportsCache[key] = { status: 'pending', reportId, products: entry?.products ?? [], ts: entry?.ts ?? 0 };
+  } catch (err) {
+    console.error('Report creation failed:', err.message);
+  }
+  return entry?.products ?? [];
+}
+
 // ── Transform SP-API response into dashboard-compatible shape ──
-function transformData(salesData, ordersData) {
+function transformData(salesData, ordersData, products) {
   // SP-API returns aggregate totals; map to the shape renderAll() expects.
   // Falls back to empty arrays if unexpected shape received.
   const metrics = salesData?.payload ?? [];
@@ -120,9 +206,9 @@ function transformData(salesData, ordersData) {
     totalRevenue: +totalRevenue.toFixed(2),
     totalUnits,
     returnRate: +returnRate.toFixed(4),
-    // Per-product breakdown not available from orderMetrics aggregate endpoint;
-    // use product-level reports for richer data (Reports API, async).
-    products: [],
+    // Real per-ASIN { asin, units, revenue } once the Reports API pipeline has
+    // finished for this range; [] until then (dashboard falls back gracefully).
+    products,
   };
 }
 
@@ -147,12 +233,13 @@ module.exports = async function handler(req, res) {
 
   try {
     const accessToken = await getAccessToken();
-    const [salesData, ordersData] = await Promise.all([
+    const [salesData, ordersData, products] = await Promise.all([
       fetchSalesMetrics(accessToken, interval),
       fetchOrders(accessToken, interval),
+      advanceProductsReport(accessToken, interval),
     ]);
 
-    const result = transformData(salesData, ordersData);
+    const result = transformData(salesData, ordersData, products);
     dataCache[cacheKey] = { ts: Date.now(), data: result };
     res.status(200).json(result);
   } catch (err) {
@@ -193,5 +280,42 @@ function httpsGet(hostname, path, headers) {
     });
     req.on('error', reject);
     req.end();
+  });
+}
+
+function httpsPostJson(hostname, path, body, headers) {
+  const payload = JSON.stringify(body);
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname, path, method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+    }, res => {
+      let data = '';
+      res.on('data', c => (data += c));
+      res.on('end', () => {
+        if (res.statusCode >= 400) {
+          return reject(new Error(`SP-API ${res.statusCode}: ${data.slice(0, 300)}`));
+        }
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error('Invalid JSON: ' + data.slice(0, 200))); }
+      });
+    });
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
+// Fetches raw bytes from an arbitrary URL (used for the pre-signed S3 report
+// document URL) — no auth header needed/wanted, and no JSON parsing here since
+// the payload may be gzip-compressed binary.
+function httpsGetBuffer(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      if (res.statusCode >= 400) return reject(new Error(`Report download ${res.statusCode}`));
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
   });
 }

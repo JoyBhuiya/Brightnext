@@ -14,7 +14,9 @@ const API_DIR = path.join(ROOT, 'api');
 // ── Load .env so local dev sees the same vars as Vercel's env config ──
 const ENV_PATH = path.join(ROOT, '.env');
 if (fs.existsSync(ENV_PATH)) {
-  for (const line of fs.readFileSync(ENV_PATH, 'utf8').split('\n')) {
+  let envContent = fs.readFileSync(ENV_PATH, 'utf8');
+  if (envContent.charCodeAt(0) === 0xFEFF) envContent = envContent.slice(1); // strip BOM (Notepad UTF-8)
+  for (const line of envContent.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
     const eq = trimmed.indexOf('=');

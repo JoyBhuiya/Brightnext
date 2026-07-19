@@ -799,6 +799,10 @@ tbody tr:hover { background:rgba(0,229,255,0.03); }
 //  BRIGHTNEXT AMAZON ANALYTICS — DATA ENGINE
 // ═══════════════════════════════════════════
 
+// Declared early: simulate() (called below, at page-init time) depends on currentRange.
+let isLiveMode = false;
+let currentRange = '30d';
+
 const PRODUCTS = [
   {
     name: 'Pet Hair Removal Brush',
@@ -862,12 +866,23 @@ const PRODUCTS = [
   }
 ];
 
+// ── baseUnits above are tuned for a 30-day baseline; scale for the active range ──
+function daysForRange(range) {
+  if (range === 'ytd') {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    return Math.max(1, Math.round((now - start) / 86400000));
+  }
+  return parseInt(range, 10) || 30;
+}
+
 // ── Simulate realistic data with slight randomness ──
 function simulate() {
   const jitter = () => 0.9 + Math.random() * 0.2;
+  const periodScale = daysForRange(currentRange) / 30;
 
   return PRODUCTS.map(p => {
-    const units = Math.round(p.baseUnits * jitter());
+    const units = Math.round(p.baseUnits * periodScale * jitter());
     const revenue = +(units * p.unitPrice).toFixed(2);
     const totalCogs = +(units * p.cogs).toFixed(2);
     const amazonReferral = +(revenue * p.amazonFeeRate).toFixed(2);
@@ -1258,9 +1273,7 @@ function renderROIChart() {
 // ══════════════════════════
 //  LIVE DATA / SP-API
 // ══════════════════════════
-
-let isLiveMode = false;
-let currentRange = 30;
+// (isLiveMode / currentRange declared near the top — simulate() needs them at page-init time)
 
 // Called when user clicks "Connect Live" in the API panel.
 // Credentials always come from server-side env vars (LWA_CLIENT_ID/SECRET/REFRESH_TOKEN) — never from the browser.
@@ -1289,7 +1302,7 @@ async function connectLive() {
     badge.textContent = '◉ LIVE';
 
     msg.className = 'api-status-msg ok';
-    msg.textContent = `Connected — live data loaded for last ${currentRange} days. Auto-refresh every 15 min.`;
+    msg.textContent = `Connected — live data loaded for ${currentRange.toUpperCase()}. Auto-refresh every 15 min.`;
     btn.textContent = 'Reconnect';
     btn.disabled = false;
 
@@ -1303,13 +1316,30 @@ async function connectLive() {
   }
 }
 
-async function fetchAndApplyLive() {
+// showErrors=true for user-initiated actions (range switch, manual refresh) so a
+// failed request is visible instead of silently leaving stale data on screen while
+// the newly clicked range button shows as active. Background auto-refresh stays quiet.
+async function fetchAndApplyLive(showErrors = false) {
   if (!isLiveMode) return;
+  const msg = document.getElementById('apiStatusMsg');
   try {
     const res = await fetch(`/api/amazon?range=${currentRange}`);
-    if (!res.ok) return;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Server error ' + res.status }));
+      throw new Error(err.error || 'Request failed');
+    }
     applyLiveData(await res.json());
-  } catch (_) { /* silent — keep showing last live data */ }
+    if (showErrors) {
+      msg.className = 'api-status-msg ok';
+      msg.textContent = `Live data refreshed for ${currentRange.toUpperCase()}.`;
+    }
+  } catch (err) {
+    if (showErrors) {
+      msg.className = 'api-status-msg err';
+      msg.textContent = 'Refresh failed: ' + err.message + ' — showing last successful data.';
+    }
+    // background auto-refresh: swallow the error, keep showing the last successful data
+  }
 }
 
 // Overlay live API totals onto the KPI cards; product table stays demo until
@@ -1348,7 +1378,7 @@ function setRange(btn, range) {
   btn.classList.add('active');
   currentRange = range;
   if (isLiveMode) {
-    fetchAndApplyLive();
+    fetchAndApplyLive(true);
   } else {
     renderAll();
   }
@@ -1358,7 +1388,7 @@ function refreshData(btn) {
   btn.classList.add('spinning');
   const done = () => btn.classList.remove('spinning');
   if (isLiveMode) {
-    fetchAndApplyLive().then(done);
+    fetchAndApplyLive(true).then(done);
   } else {
     setTimeout(() => { renderAll(); done(); }, 800);
   }

@@ -11,6 +11,8 @@ const {
   MARKETPLACE_ID = 'A1F83G8C2ARO7P', // UK marketplace default
 } = process.env;
 
+const TIME_ZONE = 'Europe/London'; // matches default UK marketplace; align with your account's timezone
+
 // ── Simple in-memory token cache (valid per cold-start) ──
 let cachedToken = null;
 let tokenExpiry = 0;
@@ -48,27 +50,53 @@ async function spApiGet(path, queryParams, accessToken) {
   return httpsGet(host, `${path}?${qs}`, headers);
 }
 
+// ── Timezone-aware date helpers (no external deps) ──
+// Seller Central reports "last 7/30/90 days" and "YTD" using the account's own
+// local calendar days. Slicing plain UTC dates can shift the window by up to a
+// day versus Seller Central depending on time of year (BST/GMT), which shows
+// up as mismatched totals. These helpers compute boundaries in TIME_ZONE instead.
+function ymdInZone(date, timeZone) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+
+function startOfDayUTC(ymd, timeZone) {
+  const naiveUTC = new Date(`${ymd}T00:00:00Z`);
+  const asZoneWallClock = new Date(naiveUTC.toLocaleString('en-US', { timeZone }));
+  const asUTCWallClock = new Date(naiveUTC.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const offsetMs = asUTCWallClock.getTime() - asZoneWallClock.getTime();
+  return new Date(naiveUTC.getTime() + offsetMs);
+}
+
+// Accepts '7d' / '30d' / '90d' / 'ytd' (or bare numbers); returns { startDate, endDate, key }.
+function computeInterval(rangeParam) {
+  const now = new Date();
+  const key = rangeParam === 'ytd' ? 'ytd' : `${parseInt(rangeParam, 10) || 30}d`;
+
+  if (key === 'ytd') {
+    const year = ymdInZone(now, TIME_ZONE).slice(0, 4);
+    return { startDate: startOfDayUTC(`${year}-01-01`, TIME_ZONE), endDate: now, key };
+  }
+
+  const days = parseInt(key, 10);
+  const startYmd = ymdInZone(new Date(now.getTime() - days * 86400000), TIME_ZONE);
+  return { startDate: startOfDayUTC(startYmd, TIME_ZONE), endDate: now, key };
+}
+
 // ── Fetch order metrics (revenue + units by ASIN) ──
-async function fetchSalesMetrics(accessToken, days) {
-  const endDate = new Date();
-  const startDate = new Date(Date.now() - days * 86400000);
-
-  const data = await spApiGet('/sales/v1/orderMetrics', {
+async function fetchSalesMetrics(accessToken, interval) {
+  return spApiGet('/sales/v1/orderMetrics', {
     marketplaceIds: MARKETPLACE_ID,
-    interval: `${startDate.toISOString().slice(0, 10)}T00:00:00Z--${endDate.toISOString().slice(0, 10)}T23:59:59Z`,
+    interval: `${interval.startDate.toISOString()}--${interval.endDate.toISOString()}`,
     granularity: 'Total',
-    granularityTimeZone: 'Europe/London',
+    granularityTimeZone: TIME_ZONE,
   }, accessToken);
-
-  return data;
 }
 
 // ── Fetch recent orders (for return rate estimation) ──
-async function fetchOrders(accessToken, days) {
-  const createdAfter = new Date(Date.now() - days * 86400000).toISOString();
+async function fetchOrders(accessToken, interval) {
   return spApiGet('/orders/v0/orders', {
     MarketplaceIds: MARKETPLACE_ID,
-    CreatedAfter: createdAfter,
+    CreatedAfter: interval.startDate.toISOString(),
     OrderStatuses: 'Shipped,Unshipped,PartiallyShipped',
   }, accessToken);
 }
@@ -110,8 +138,8 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'SP-API credentials not configured on server.' });
   }
 
-  const days = parseInt(req.query.range, 10) || 30;
-  const cacheKey = `metrics_${days}`;
+  const interval = computeInterval(String(req.query.range || '30d').toLowerCase());
+  const cacheKey = `metrics_${interval.key}`;
   const cached = dataCache[cacheKey];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return res.status(200).json(cached.data);
@@ -120,8 +148,8 @@ module.exports = async function handler(req, res) {
   try {
     const accessToken = await getAccessToken();
     const [salesData, ordersData] = await Promise.all([
-      fetchSalesMetrics(accessToken, days),
-      fetchOrders(accessToken, days),
+      fetchSalesMetrics(accessToken, interval),
+      fetchOrders(accessToken, interval),
     ]);
 
     const result = transformData(salesData, ordersData);

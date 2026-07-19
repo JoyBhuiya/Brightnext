@@ -804,66 +804,75 @@ let isLiveMode = false;
 let currentRange = '30d';
 let liveTotals = null; // { totalRevenue, totalUnits, returnRate } from the aggregate SP-API endpoint
 
+// ── name/asin below are REAL (from npm run list-asins against your Seller
+// Central account). unitPrice/cogs/amazonFeeRate/fbaFee/ppcCostPerUnit/
+// shippingIn/storageFee/returnRate are ESTIMATES — Amazon's API has no
+// visibility into your COGS or ad spend, so these are rough placeholders
+// (typical UK FBA small-accessory figures) until you replace them with your
+// real numbers. Units/revenue will already be 100% real once the Reports API
+// pipeline finishes (see api/amazon.js) — only margin/profit/ROI depend on
+// these estimates being corrected. baseUnits/growth only affect the DEMO
+// fallback view (shown until live data loads), not the real figures.
 const PRODUCTS = [
   {
-    name: 'Pet Hair Removal Brush',
-    asin: 'B0DXXXXP01',
+    name: 'Pet Hair Remover',
+    asin: 'B0GJN4G35W',
     color: '#FF6B2C',
-    unitPrice: 13.99,
-    cogs: 3.20,
+    unitPrice: 12.99,  // ESTIMATE
+    cogs: 3.25,         // ESTIMATE
     amazonFeeRate: 0.153,
-    fbaFee: 3.22,
-    ppcCostPerUnit: 1.15,
-    shippingIn: 0.65,
-    storageFee: 0.18,
-    returnRate: 0.018,
-    baseUnits: 312,
-    growth: 0.24
-  },
-  {
-    name: 'Smart Cable Organiser',
-    asin: 'B0DXXXXC02',
-    color: '#00E5FF',
-    unitPrice: 9.99,
-    cogs: 2.10,
-    amazonFeeRate: 0.153,
-    fbaFee: 3.07,
-    ppcCostPerUnit: 0.92,
-    shippingIn: 0.45,
-    storageFee: 0.12,
-    returnRate: 0.025,
-    baseUnits: 228,
-    growth: 0.15
-  },
-  {
-    name: 'Car MagSafe Charger Mount',
-    asin: 'B0DXXXXM03',
-    color: '#FFB800',
-    unitPrice: 24.99,
-    cogs: 7.80,
-    amazonFeeRate: 0.153,
-    fbaFee: 4.15,
-    ppcCostPerUnit: 2.40,
-    shippingIn: 0.90,
-    storageFee: 0.22,
-    returnRate: 0.032,
-    baseUnits: 187,
+    fbaFee: 2.80,        // ESTIMATE
+    ppcCostPerUnit: 1.00, // ESTIMATE
+    shippingIn: 0.60,    // ESTIMATE
+    storageFee: 0.18,    // ESTIMATE
+    returnRate: 0.02,    // ESTIMATE
+    baseUnits: 250,
     growth: 0.10
   },
   {
-    name: 'Kids Creative Drawing Book',
-    asin: 'B0DXXXXK04',
-    color: '#FF4E8C',
-    unitPrice: 7.99,
-    cogs: 1.85,
+    name: 'Magnetic Phone Holder Mount',
+    asin: 'B0GR1V9PSG',
+    color: '#FFB800',
+    unitPrice: 15.99,   // ESTIMATE
+    cogs: 4.00,          // ESTIMATE
     amazonFeeRate: 0.153,
-    fbaFee: 2.90,
-    ppcCostPerUnit: 0.68,
-    shippingIn: 0.50,
-    storageFee: 0.15,
-    returnRate: 0.012,
-    baseUnits: 116,
-    growth: 0.08
+    fbaFee: 3.00,         // ESTIMATE
+    ppcCostPerUnit: 1.20, // ESTIMATE
+    shippingIn: 0.70,     // ESTIMATE
+    storageFee: 0.20,     // ESTIMATE
+    returnRate: 0.02,     // ESTIMATE
+    baseUnits: 180,
+    growth: 0.10
+  },
+  {
+    name: 'Smart Cable Organiser — Black',
+    asin: 'B0GJT5ZPT1',
+    color: '#00E5FF',
+    unitPrice: 9.99,    // ESTIMATE
+    cogs: 2.50,          // ESTIMATE
+    amazonFeeRate: 0.153,
+    fbaFee: 2.50,         // ESTIMATE
+    ppcCostPerUnit: 0.90, // ESTIMATE
+    shippingIn: 0.45,     // ESTIMATE
+    storageFee: 0.12,     // ESTIMATE
+    returnRate: 0.02,     // ESTIMATE
+    baseUnits: 150,
+    growth: 0.10
+  },
+  {
+    name: 'Smart Cable Organiser — White',
+    asin: 'B0GJT7WLJR',
+    color: '#40C4FF',
+    unitPrice: 9.99,    // ESTIMATE
+    cogs: 2.50,          // ESTIMATE
+    amazonFeeRate: 0.153,
+    fbaFee: 2.50,         // ESTIMATE
+    ppcCostPerUnit: 0.90, // ESTIMATE
+    shippingIn: 0.45,     // ESTIMATE
+    storageFee: 0.12,     // ESTIMATE
+    returnRate: 0.02,     // ESTIMATE
+    baseUnits: 150,
+    growth: 0.10
   }
 ];
 

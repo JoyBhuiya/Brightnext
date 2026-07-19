@@ -903,12 +903,12 @@ function getWinner(data) {
   let best = null, bestScore = -1;
   data.forEach(p => {
     const score =
-      (p.margin / maxMargin) * 0.4 +
-      (p.roi / maxROI) * 0.3 +
-      (p.revenue / totalRev) * 0.3;
+      (maxMargin !== 0 ? (p.margin / maxMargin) * 0.4 : 0) +
+      (maxROI !== 0 ? (p.roi / maxROI) * 0.3 : 0) +
+      (totalRev !== 0 ? (p.revenue / totalRev) * 0.3 : 0);
     if (score > bestScore) { bestScore = score; best = p; }
   });
-  return best;
+  return best ?? data[0] ?? null;
 }
 
 // ══════════════════════════

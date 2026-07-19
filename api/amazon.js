@@ -80,7 +80,7 @@ function transformData(salesData, ordersData) {
   const metrics = salesData?.payload ?? [];
   const orders = ordersData?.payload?.Orders ?? [];
 
-  const totalRevenue = metrics.reduce((s, m) => s + parseFloat(m.orderItemSalesRevenue?.amount ?? 0), 0);
+  const totalRevenue = metrics.reduce((s, m) => s + parseFloat(m.totalSales?.amount ?? 0), 0);
   const totalUnits = metrics.reduce((s, m) => s + (m.unitCount ?? 0), 0);
 
   // Count returns from orders with status = Cancelled/Returned (approximation)

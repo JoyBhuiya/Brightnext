@@ -1,16 +1,13 @@
 // Vercel Serverless Function — Amazon SP-API proxy
-// Keeps all AWS credentials server-side; browser never sees them.
+// Keeps LWA credentials server-side; browser never sees them.
+// SP-API no longer requires AWS SigV4 signing — LWA access token auth only.
 
 const https = require('https');
-const crypto = require('crypto');
 
 const {
   LWA_CLIENT_ID,
   LWA_CLIENT_SECRET,
   LWA_REFRESH_TOKEN,
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-  SELLER_ID,
   MARKETPLACE_ID = 'A1F83G8C2ARO7P', // UK marketplace default
 } = process.env;
 
@@ -42,40 +39,11 @@ async function getAccessToken() {
   return cachedToken;
 }
 
-// ── AWS SigV4 signing ──
-function sigV4(method, host, path, queryString, payload, service, region, date) {
-  const dateStr = date.toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
-  const dateShort = dateStr.slice(0, 8);
-
-  const canonicalHeaders = `host:${host}\nx-amz-date:${dateStr}\n`;
-  const signedHeaders = 'host;x-amz-date';
-  const payloadHash = crypto.createHash('sha256').update(payload || '').digest('hex');
-  const canonicalRequest = [method, path, queryString, canonicalHeaders, signedHeaders, payloadHash].join('\n');
-
-  const credentialScope = `${dateShort}/${region}/${service}/aws4_request`;
-  const stringToSign = ['AWS4-HMAC-SHA256', dateStr, credentialScope,
-    crypto.createHash('sha256').update(canonicalRequest).digest('hex')].join('\n');
-
-  const hmac = (key, data) => crypto.createHmac('sha256', key).update(data).digest();
-  const signingKey = hmac(hmac(hmac(hmac('AWS4' + AWS_SECRET_ACCESS_KEY, dateShort), region), service), 'aws4_request');
-  const signature = hmac(signingKey, stringToSign).toString('hex');
-
-  return `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-}
-
 // ── SP-API request helper ──
 async function spApiGet(path, queryParams, accessToken) {
   const host = 'sellingpartnerapi-eu.amazon.com';
   const qs = new URLSearchParams(queryParams).toString();
-  const date = new Date();
-  const dateStr = date.toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
-  const auth = sigV4('GET', host, path, qs, '', 'execute-api', 'eu-west-1', date);
-
-  const headers = {
-    'x-amz-access-token': accessToken,
-    'x-amz-date': dateStr,
-    Authorization: auth,
-  };
+  const headers = { 'x-amz-access-token': accessToken };
 
   return httpsGet(host, `${path}?${qs}`, headers);
 }
@@ -136,8 +104,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const missingCreds = !LWA_CLIENT_ID || !LWA_CLIENT_SECRET || !LWA_REFRESH_TOKEN ||
-    !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY;
+  const missingCreds = !LWA_CLIENT_ID || !LWA_CLIENT_SECRET || !LWA_REFRESH_TOKEN;
 
   if (missingCreds) {
     return res.status(503).json({ error: 'SP-API credentials not configured on server.' });

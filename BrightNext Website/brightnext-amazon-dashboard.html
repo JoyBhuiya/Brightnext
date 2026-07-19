@@ -439,7 +439,7 @@ tbody tr:hover { background:rgba(0,229,255,0.03); }
 .api-connect-form {
   margin-top:1.25rem; padding-top:1.25rem;
   border-top:1px solid var(--border);
-  display:grid; grid-template-columns:1fr 1fr auto; gap:0.75rem; align-items:end;
+  display:flex; gap:0.75rem; align-items:center;
 }
 .api-field label {
   display:block; font-size:0.72rem; color:var(--text-dim);
@@ -781,16 +781,8 @@ tbody tr:hover { background:rgba(0,229,255,0.03); }
         <div class="api-step-desc">Once authorised, the dashboard fetches live data via SP-API endpoints. Auto-refresh every 15 minutes. All data encrypted in transit.</div>
       </div>
     </div>
-    <!-- Connect form: credentials entered here are sent to the server proxy only -->
+    <!-- Credentials live server-side only (Vercel/​.env LWA_CLIENT_ID, LWA_CLIENT_SECRET, LWA_REFRESH_TOKEN) -->
     <div class="api-connect-form" id="apiConnectForm">
-      <div class="api-field">
-        <label>LWA CLIENT ID</label>
-        <input type="text" id="inputClientId" placeholder="amzn1.application-oa2-client.xxxxxxxx" autocomplete="off" spellcheck="false">
-      </div>
-      <div class="api-field">
-        <label>LWA REFRESH TOKEN</label>
-        <input type="password" id="inputRefreshToken" placeholder="Atzr|xxxxxxxxxxxxxxxx" autocomplete="off">
-      </div>
       <button class="api-connect-btn" id="connectBtn" onclick="connectLive()">Connect Live</button>
     </div>
     <div class="api-status-msg" id="apiStatusMsg"></div>
@@ -1270,28 +1262,18 @@ function renderROIChart() {
 let isLiveMode = false;
 let currentRange = 30;
 
-// Called when user clicks "Connect Live" in the API panel
+// Called when user clicks "Connect Live" in the API panel.
+// Credentials always come from server-side env vars (LWA_CLIENT_ID/SECRET/REFRESH_TOKEN) — never from the browser.
 async function connectLive() {
-  const clientId = document.getElementById('inputClientId').value.trim();
-  const refreshToken = document.getElementById('inputRefreshToken').value.trim();
   const btn = document.getElementById('connectBtn');
   const msg = document.getElementById('apiStatusMsg');
-
-  if (!clientId || !refreshToken) {
-    msg.className = 'api-status-msg err';
-    msg.textContent = 'Please enter both Client ID and Refresh Token.';
-    return;
-  }
 
   btn.disabled = true;
   btn.textContent = 'Connecting…';
   msg.className = 'api-status-msg';
-  msg.textContent = 'Validating credentials with SP-API…';
+  msg.textContent = 'Fetching data from SP-API…';
 
   try {
-    // Store credentials server-side by passing them in a one-time setup call.
-    // The proxy reads LWA_REFRESH_TOKEN from env vars set in Vercel dashboard.
-    // Here we just test connectivity by fetching with the current range.
     const res = await fetch(`/api/amazon?range=${currentRange}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Server error ' + res.status }));
@@ -1387,6 +1369,26 @@ setInterval(() => { if (!isLiveMode) renderAll(); }, 60000);
 
 // ── Initial render ──
 renderAll();
+
+// ── Silently try live data on load; falls back to demo with no error shown ──
+(async function tryAutoConnect() {
+  try {
+    const res = await fetch(`/api/amazon?range=${currentRange}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.live) return;
+
+    isLiveMode = true;
+    applyLiveData(data);
+
+    const badge = document.getElementById('dataBadge');
+    badge.className = 'data-mode-badge live';
+    badge.textContent = '◉ LIVE';
+    document.getElementById('connectBtn').textContent = 'Reconnect';
+
+    setInterval(() => fetchAndApplyLive(), 15 * 60 * 1000);
+  } catch (_) { /* stay in demo mode silently */ }
+})();
 </script>
 
 </body>

@@ -10,6 +10,21 @@ const url = require('url');
 const ROOT = path.join(__dirname, '..');
 const STATIC_DIR = path.join(ROOT, 'BrightNext Website');
 const API_DIR = path.join(ROOT, 'api');
+
+// ── Load .env so local dev sees the same vars as Vercel's env config ──
+const ENV_PATH = path.join(ROOT, '.env');
+if (fs.existsSync(ENV_PATH)) {
+  for (const line of fs.readFileSync(ENV_PATH, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (key && !(key in process.env)) process.env[key] = value;
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 
 const MIME = {

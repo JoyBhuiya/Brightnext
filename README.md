@@ -52,12 +52,19 @@ No AWS IAM keys or Selling Partner ID are required by this code today.
 ## Local development
 
 ```bash
-npm i -g vercel        # one-time
-vercel dev             # runs static site + /api/amazon locally
+npm run dev            # scripts/dev-server.js — serves site + /api/amazon on :3000
 ```
 
-Create a `.env` (gitignored) with the variables above to exercise the live API path;
-without them the dashboards render but `/api/amazon` returns `503`.
+Create a `.env` (gitignored) in the repo root with the variables above to exercise the
+live API path; `scripts/dev-server.js` loads it automatically on startup. Without it,
+the dashboards render but `/api/amazon` returns `503`.
+
+Alternatively, use the real Vercel CLI:
+
+```bash
+npm i -g vercel        # one-time
+vercel dev             # runs static site + /api/amazon locally, reading .env automatically
+```
 
 ## Deploy
 

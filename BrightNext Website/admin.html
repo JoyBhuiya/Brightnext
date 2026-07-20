@@ -727,11 +727,6 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
 
     <div class="login-error" id="loginError">⚠ Invalid credentials. Please try again.</div>
 
-    <div class="login-hint">
-      <strong>Demo credentials</strong><br>
-      Username: <code style="color:var(--cyan)">admin</code> &nbsp;|&nbsp; Password: <code style="color:var(--cyan)">brightnext2026</code>
-    </div>
-
     <div class="login-back">
       <a href="index.html">← Back to website</a>
     </div>
@@ -938,39 +933,51 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
 
 <script>
 // ═══════════════════════════════════════════
-//  AUTHENTICATION (CLIENT-SIDE DEMO)
+//  AUTHENTICATION
 // ═══════════════════════════════════════════
-// NOTE: For production, replace with real server-side authentication.
-// Client-side auth is NOT secure — anyone can view the source.
-// This is a demonstration gate only.
+// The password check itself happens server-side (api/admin-auth.js) — the
+// real credential is never present in this file. NOTE: this page is still a
+// static file with no protected API calls behind it, so the check below only
+// gates the UI, not the underlying page content — anyone who bypasses it (or
+// just reads this source) can still see the (demo) data rendered below. For
+// real content-level protection, use Vercel's Deployment Protection / Edge
+// Middleware in front of this page.
 
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'brightnext2026';
 const SESSION_KEY = 'brightnext_admin_session';
 const SESSION_HOURS = 8;
 
-function checkLogin(event) {
+async function checkLogin(event) {
   event.preventDefault();
   const user = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
   const errorEl = document.getElementById('loginError');
+  const submitBtn = event.target.querySelector('button[type=submit]');
 
-  if (user === ADMIN_USER && pass === ADMIN_PASS) {
-    // Set session in sessionStorage (cleared on browser close)
-    const session = {
-      user: user,
-      expires: Date.now() + (SESSION_HOURS * 60 * 60 * 1000)
-    };
-    try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    } catch (e) {
-      // sessionStorage may be unavailable; fall back to in-memory only
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    const res = await fetch('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, password: pass }),
+    });
+    const data = await res.json().catch(() => ({ ok: false }));
+
+    if (res.ok && data.ok) {
+      const session = { user, expires: Date.now() + (SESSION_HOURS * 60 * 60 * 1000) };
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {}
+      showDashboard();
+    } else {
+      errorEl.textContent = '⚠ Invalid credentials. Please try again.';
+      errorEl.classList.add('visible');
+      setTimeout(() => errorEl.classList.remove('visible'), 3000);
+      document.getElementById('loginPass').value = '';
     }
-    showDashboard();
-  } else {
+  } catch (err) {
+    errorEl.textContent = '⚠ Login request failed — check your connection.';
     errorEl.classList.add('visible');
     setTimeout(() => errorEl.classList.remove('visible'), 3000);
-    document.getElementById('loginPass').value = '';
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
   return false;
 }

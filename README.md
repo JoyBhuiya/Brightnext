@@ -16,7 +16,7 @@ serverless Amazon Seller analytics dashboard, deployed on Vercel.
 - `index.html` — public marketing site (served at `/`).
 - `brightnext-website.html` — full/expanded marketing page variant.
 - `brightnext-amazon-dashboard.html` — Amazon seller analytics dashboard (public-facing).
-- `admin.html` — admin analytics view.
+- `admin.html` — admin analytics view, gated by a login form (see Admin login below).
 - Image assets: `brightnext-logo.png`, `magsafe-charger.jpg`, `cable-organiser.jpg`, `pet-hair-removal.png`.
 
 Both dashboards fetch live data from `GET /api/amazon?range=<days>`.
@@ -44,6 +44,23 @@ Set these in Vercel (Project → Settings → Environment Variables) — **never
 | `MARKETPLACE_ID` | Optional, defaults to `A1F83G8C2ARO7P` (Amazon UK) |
 
 No AWS IAM keys or Selling Partner ID are required by this code today.
+
+## Admin login — `api/admin-auth.js`
+
+`admin.html`'s login checks credentials via this endpoint instead of comparing
+them in client-side JS (the original template hardcoded a real-looking password
+directly in public JS — fixed). Set these in Vercel to override the demo default:
+
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_USER` | Optional, defaults to `admin` |
+| `ADMIN_PASSWORD` | Optional, defaults to a demo password — **set a real one before deploying** |
+
+**Important limitation:** `admin.html` is a static file with no protected API calls
+behind it, so this only keeps the credential itself out of public source — it
+doesn't prevent someone from viewing the static page's source. For real
+content-level protection, put Vercel's **Deployment Protection** (or Edge
+Middleware) in front of this page.
 
 ## Routing (`vercel.json`)
 

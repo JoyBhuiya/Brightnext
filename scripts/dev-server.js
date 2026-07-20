@@ -34,6 +34,20 @@ function makeRes(res) {
   return res;
 }
 
+// Vercel's Node runtime auto-parses JSON request bodies into req.body; mirror
+// that here so handlers written against that contract behave the same locally.
+function readJsonBody(req) {
+  return new Promise((resolve) => {
+    if (req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH') return resolve(undefined);
+    let data = '';
+    req.on('data', (c) => (data += c));
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch { resolve({}); }
+    });
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   makeRes(res);
   const parsed = url.parse(req.url, true);
@@ -46,6 +60,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const handler = require(file);
       req.query = parsed.query;
+      req.body = await readJsonBody(req);
       await handler(req, res);
     } catch (err) {
       res.status(500).json({ error: err.message });

@@ -11,11 +11,26 @@
 // that, use Vercel's Deployment Protection / Edge Middleware on top of this.
 const { ADMIN_USER = 'admin', ADMIN_PASSWORD = 'brightnext2026' } = process.env;
 
+// Best-effort in-memory brute-force throttle (per cold-start instance only —
+// Vercel may run multiple instances, so this isn't a substitute for a real
+// rate-limit service, but it adds real friction for casual guessing).
+const attempts = {}; // ip -> { count, windowStart }
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000;
+
 module.exports = function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  // No CORS header: this is only ever called same-origin from admin.html —
+  // omitting it means browsers block any other site's cross-origin attempt
+  // to probe credentials through a visitor.
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
+
+  const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  const now = Date.now();
+  const entry = attempts[ip];
+  if (entry && now - entry.windowStart < WINDOW_MS && entry.count >= MAX_ATTEMPTS) {
+    return res.status(429).json({ ok: false, error: 'Too many attempts — try again later.' });
+  }
 
   let body = req.body;
   if (!body || typeof body === 'string') {
@@ -24,5 +39,16 @@ module.exports = function handler(req, res) {
 
   const { username, password } = body || {};
   const ok = username === ADMIN_USER && password === ADMIN_PASSWORD;
+
+  if (ok) {
+    delete attempts[ip];
+  } else {
+    if (!entry || now - entry.windowStart >= WINDOW_MS) {
+      attempts[ip] = { count: 1, windowStart: now };
+    } else {
+      entry.count++;
+    }
+  }
+
   res.status(ok ? 200 : 401).json({ ok });
 };

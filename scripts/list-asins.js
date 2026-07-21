@@ -21,10 +21,9 @@ const MARKETPLACE_ID = process.env.MARKETPLACE_ID || 'A1F83G8C2ARO7P';
 // Keywords to suggest a match against BrightNext's known products — edit this
 // list if your catalog changes, or just eyeball the full listing printed below.
 const KNOWN_PRODUCTS = [
-  { name: 'Pet Hair Removal Brush', keywords: ['pet', 'hair'] },
-  { name: 'Smart Cable Organiser', keywords: ['cable', 'organiser', 'organizer'] },
-  { name: 'Car MagSafe Charger Mount', keywords: ['magsafe', 'charger', 'mount'] },
-  { name: 'Kids Creative Drawing Book', keywords: ['drawing', 'book'] },
+  { name: 'Pet Hair Remover', keywords: ['pet', 'hair'] },
+  { name: 'Magnetic Phone Holder Mount', keywords: ['magnetic', 'holder', 'mount'] },
+  { name: 'Smart Cable Organiser', keywords: ['cable', 'magnetic'] },
 ];
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -63,8 +62,9 @@ function httpsGetBuffer(url) {
 }
 
 function parseTsv(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM — corrupts the first header otherwise
   const lines = text.split(/\r?\n/).filter(Boolean);
-  const headers = lines[0].split('\t');
+  const headers = lines[0].split('\t').map(h => h.trim());
   return lines.slice(1).map(line => {
     const cells = line.split('\t');
     const row = {};
@@ -97,25 +97,31 @@ function suggestMatch(title) {
   let buf = await httpsGetBuffer(doc.url);
   if (doc.compressionAlgorithm === 'GZIP') buf = zlib.gunzipSync(buf);
 
-  const rows = parseTsv(buf.toString('utf8'));
+  const text = buf.toString('utf8');
+  const rows = parseTsv(text);
+  const headerLine = (text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text).split(/\r?\n/)[0];
+  console.log('\nColumns in this report:', headerLine.split('\t').join(', '));
+
   console.log(`\nFound ${rows.length} listing(s):\n`);
-  console.log('SKU'.padEnd(24), 'ASIN'.padEnd(14), 'TITLE');
-  console.log('-'.repeat(90));
+  console.log('SKU'.padEnd(24), 'PRICE'.padEnd(10), 'ASIN'.padEnd(14), 'TITLE');
+  console.log('-'.repeat(100));
 
   for (const row of rows) {
     const sku = row['seller-sku'] || '';
     const asin = row['asin1'] || '';
+    const price = row['price'] || '';
     const title = row['item-name'] || '';
     const match = suggestMatch(title);
     console.log(
       sku.padEnd(24),
+      price.padEnd(10),
       asin.padEnd(14),
       title.slice(0, 50) + (match ? `  <-- looks like "${match}"` : '')
     );
   }
 
-  console.log('\nCopy the ASIN for each matched product into PRODUCTS in');
-  console.log('"BrightNext Website/brightnext-amazon-dashboard.html" (replace the B0DXXXXxxx placeholders).');
+  console.log('\nCopy the ASIN (and price, if shown) for each matched product into PRODUCTS in');
+  console.log('"BrightNext Website/brightnext-amazon-dashboard.html".');
 })().catch(err => {
   console.error('\nFailed:', err.message);
   process.exit(1);

@@ -127,6 +127,20 @@ function simulate() {
   }).sort((a, b) => b.margin - a.margin); // Sort by margin desc
 }
 
+// Same shape as simulate(), but no random jitter — used to scale the product
+// mix to real aggregate totals while the Reports API is still generating (see
+// applyLiveData below). Using simulate() there instead would re-randomize the
+// whole table on every refresh even though the real total didn't change.
+function baselineMix() {
+  const periodScale = daysForRange(currentRange) / 30;
+  return PRODUCTS.map(p => {
+    const units = Math.round(p.baseUnits * periodScale);
+    const revenue = +(units * p.unitPrice).toFixed(2);
+    const growthPct = +(p.growth * 100).toFixed(1);
+    return { ...p, ...deriveProductMetrics(p, units, revenue), growthPct };
+  }).sort((a, b) => b.margin - a.margin);
+}
+
 let currentData = simulate();
 
 // ── Determine winner ──
@@ -595,9 +609,11 @@ function applyLiveData(data) {
       return { ...p, ...deriveProductMetrics(p, units, revenue), growthPct: +(p.growth * 100).toFixed(1) };
     }).sort((a, b) => b.margin - a.margin);
   } else {
-    // Report not ready yet (or none of our configured ASINs matched) — scale the
-    // demo product mix so the table stays proportionate to the real totals.
-    currentData = simulate();
+    // Report not ready yet (or none of our configured ASINs matched) — scale a
+    // *stable* product mix so the table stays proportionate to the real totals.
+    // Using simulate() here (which re-randomizes on every call) would make the
+    // table jump around on every refresh even though the real total didn't change.
+    currentData = baselineMix();
     const demoRevTotal = currentData.reduce((s, p) => s + p.revenue, 0);
     const scale = demoRevTotal > 0 ? data.totalRevenue / demoRevTotal : 1;
     currentData = currentData.map(p => {

@@ -646,6 +646,31 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
   font-family: 'Rajdhani', sans-serif;
   font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;
 }
+.api-connect-form {
+  margin-top:1.25rem; padding-top:1.25rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:0.75rem; align-items:center;
+}
+.api-connect-btn {
+  padding:0.5rem 1.1rem; border-radius:6px; border:none; cursor:pointer;
+  background:var(--cyan); color:#020D1A; font-family:'Exo 2',sans-serif;
+  font-weight:700; font-size:0.82rem; white-space:nowrap;
+  transition:opacity 0.2s;
+}
+.api-connect-btn:hover { opacity:0.85; }
+.api-connect-btn:disabled { opacity:0.4; cursor:default; }
+.api-status-msg {
+  margin-top:0.6rem; font-size:0.75rem; font-family:'JetBrains Mono',monospace;
+}
+.api-status-msg.ok { color:var(--green); }
+.api-status-msg.err { color:var(--red); }
+.data-mode-badge {
+  display:inline-flex; align-items:center; gap:0.35rem;
+  font-size:0.7rem; font-family:'JetBrains Mono',monospace; font-weight:700;
+  padding:0.2rem 0.55rem; border-radius:4px; letter-spacing:0.06em;
+}
+.data-mode-badge.demo { background:rgba(255,193,7,0.12); color:#FFC107; border:1px solid rgba(255,193,7,0.25); }
+.data-mode-badge.live { background:rgba(0,224,143,0.12); color:var(--green); border:1px solid rgba(0,224,143,0.25); }
 
 /* Animations */
 .fade-in {
@@ -900,8 +925,11 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
   <div class="api-panel fade-in stagger-8" id="api-setup">
     <div class="api-panel-header">
       <div class="api-panel-icon">🔗</div>
-      <div>
-        <div class="api-panel-title">Connect Amazon Seller Central (SP-API)</div>
+      <div style="flex:1">
+        <div class="api-panel-title" style="display:flex;align-items:center;gap:0.6rem;">
+          Connect Amazon Seller Central (SP-API)
+          <span class="data-mode-badge demo" id="dataBadge">◉ DEMO</span>
+        </div>
         <div class="api-panel-desc">Link your Amazon Seller account for real-time data — replaces demo data with live sales</div>
       </div>
     </div>
@@ -922,6 +950,11 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
         <div class="api-step-desc">Dashboard fetches live SP-API data. Auto-refresh every 15 minutes. All data encrypted in transit.</div>
       </div>
     </div>
+    <!-- Credentials live server-side only (Vercel/​.env LWA_CLIENT_ID, LWA_CLIENT_SECRET, LWA_REFRESH_TOKEN) -->
+    <div class="api-connect-form" id="apiConnectForm">
+      <button class="api-connect-btn" id="connectBtn" onclick="connectLive()">Connect Live</button>
+    </div>
+    <div class="api-status-msg" id="apiStatusMsg"></div>
   </div>
 
 </main>
@@ -1000,15 +1033,15 @@ function isAuthenticated() {
 function showDashboard() {
   document.getElementById('loginGate').classList.add('hidden');
   document.getElementById('dashboardArea').style.display = 'block';
-  // Initialize dashboard
-  if (typeof Chart !== 'undefined') {
-    renderAll();
+  // Initialize dashboard (only after authentication — see dashboard-engine.js)
+  if (typeof Chart !== 'undefined' && typeof initDashboard !== 'undefined') {
+    initDashboard();
   } else {
-    // Wait for Chart.js
+    // Wait for Chart.js / dashboard-engine.js to finish loading
     const wait = setInterval(() => {
-      if (typeof Chart !== 'undefined') {
+      if (typeof Chart !== 'undefined' && typeof initDashboard !== 'undefined') {
         clearInterval(wait);
-        renderAll();
+        initDashboard();
       }
     }, 100);
   }
@@ -1026,308 +1059,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isAuthenticated()) showDashboard();
 });
 
-// ═══════════════════════════════════════════
-//  AMAZON SELLER ANALYTICS — DATA ENGINE
-// ═══════════════════════════════════════════
-
-const PRODUCTS = [
-  { name: 'Pet Hair Removal Brush', asin: 'B0DXXXXP01', color: '#FF6B2C',
-    unitPrice: 13.99, cogs: 3.20, amazonFeeRate: 0.153, fbaFee: 3.22,
-    ppcCostPerUnit: 1.15, shippingIn: 0.65, storageFee: 0.18, returnRate: 0.018,
-    baseUnits: 312, growth: 0.24 },
-  { name: 'Smart Cable Organiser', asin: 'B0DXXXXC02', color: '#00E5FF',
-    unitPrice: 9.99, cogs: 2.10, amazonFeeRate: 0.153, fbaFee: 3.07,
-    ppcCostPerUnit: 0.92, shippingIn: 0.45, storageFee: 0.12, returnRate: 0.025,
-    baseUnits: 228, growth: 0.15 },
-  { name: 'Car MagSafe Charger Mount', asin: 'B0DXXXXM03', color: '#FFB800',
-    unitPrice: 24.99, cogs: 7.80, amazonFeeRate: 0.153, fbaFee: 4.15,
-    ppcCostPerUnit: 2.40, shippingIn: 0.90, storageFee: 0.22, returnRate: 0.032,
-    baseUnits: 187, growth: 0.10 },
-  { name: 'Kids Creative Drawing Book', asin: 'B0DXXXXK04', color: '#FF4E8C',
-    unitPrice: 7.99, cogs: 1.85, amazonFeeRate: 0.153, fbaFee: 2.90,
-    ppcCostPerUnit: 0.68, shippingIn: 0.50, storageFee: 0.15, returnRate: 0.012,
-    baseUnits: 116, growth: 0.08 }
-];
-
-function simulate() {
-  const jitter = () => 0.9 + Math.random() * 0.2;
-  return PRODUCTS.map(p => {
-    const units = Math.round(p.baseUnits * jitter());
-    const revenue = +(units * p.unitPrice).toFixed(2);
-    const totalCogs = +(units * p.cogs).toFixed(2);
-    const amazonReferral = +(revenue * p.amazonFeeRate).toFixed(2);
-    const fbaTotal = +(units * p.fbaFee).toFixed(2);
-    const ppcSpend = +(units * p.ppcCostPerUnit).toFixed(2);
-    const shipping = +(units * p.shippingIn).toFixed(2);
-    const storage = +(units * p.storageFee).toFixed(2);
-    const returnCost = +(Math.round(units * p.returnRate) * (p.cogs + p.fbaFee)).toFixed(2);
-    const totalFees = +(amazonReferral + fbaTotal).toFixed(2);
-    const totalCost = +(totalCogs + totalFees + ppcSpend + shipping + storage + returnCost).toFixed(2);
-    const netProfit = +(revenue - totalCost).toFixed(2);
-    const margin = +((netProfit / revenue) * 100).toFixed(1);
-    const roi = +(((revenue - totalCost) / totalCost) * 100).toFixed(0);
-    const growthPct = +((p.growth + (Math.random() * 0.06 - 0.03)) * 100).toFixed(1);
-    return { ...p, units, revenue, totalCogs, amazonReferral, fbaTotal,
-      ppcSpend, shipping, storage, returnCost, totalFees, totalCost,
-      netProfit, margin, roi, growthPct };
-  }).sort((a, b) => b.margin - a.margin);
-}
-
-let currentData = simulate();
-
-function getWinner(data) {
-  const totalRev = data.reduce((s, p) => s + p.revenue, 0);
-  const maxMargin = Math.max(...data.map(p => p.margin));
-  const maxROI = Math.max(...data.map(p => p.roi));
-  let best = null, bestScore = -1;
-  data.forEach(p => {
-    const score = (p.margin / maxMargin) * 0.4 +
-                  (p.roi / maxROI) * 0.3 +
-                  (p.revenue / totalRev) * 0.3;
-    if (score > bestScore) { bestScore = score; best = p; }
-  });
-  return best;
-}
-
-function renderAll() {
-  currentData = simulate();
-  renderWinner();
-  renderKPIs();
-  renderTable();
-  renderProfitCards();
-  renderCharts();
-}
-
-function renderWinner() {
-  const w = getWinner(currentData);
-  document.getElementById('winnerName').textContent = w.name;
-  document.getElementById('winnerRevenue').textContent = '£' + w.revenue.toLocaleString();
-  document.getElementById('winnerMargin').textContent = w.margin + '%';
-  document.getElementById('winnerUnits').textContent = w.units;
-  document.getElementById('winnerROI').textContent = w.roi + '%';
-}
-
-function renderKPIs() {
-  const totals = currentData.reduce((acc, p) => {
-    acc.revenue += p.revenue;
-    acc.units += p.units;
-    acc.profit += p.netProfit;
-    return acc;
-  }, { revenue: 0, units: 0, profit: 0 });
-  const avgMargin = (totals.profit / totals.revenue * 100).toFixed(1);
-  const avgReturn = (currentData.reduce((s, p) => s + p.returnRate, 0) / currentData.length * 100).toFixed(1);
-  document.getElementById('kpiRevenue').textContent = '£' + Math.round(totals.revenue).toLocaleString();
-  document.getElementById('kpiUnits').textContent = totals.units.toLocaleString();
-  document.getElementById('kpiProfit').textContent = '£' + Math.round(totals.profit).toLocaleString();
-  document.getElementById('kpiMargin').textContent = avgMargin + '%';
-  document.getElementById('kpiReturns').textContent = avgReturn + '%';
-}
-
-function renderTable() {
-  const winner = getWinner(currentData);
-  const tbody = document.getElementById('productTableBody');
-  tbody.innerHTML = currentData.map(p => {
-    const isWinner = p.asin === winner.asin;
-    let badge = '';
-    if (isWinner) badge = '<span class="dash-badge badge-winner">🏆 WINNER</span>';
-    else if (p.growthPct > 15) badge = '<span class="dash-badge badge-growth">↑ GROWTH</span>';
-    else if (p.growthPct > 5) badge = '<span class="dash-badge badge-stable">→ STABLE</span>';
-    else badge = '<span class="dash-badge badge-risk">⚠ WATCH</span>';
-    const marginColor = p.margin > 35 ? 'var(--green)' : p.margin > 20 ? 'var(--amber)' : 'var(--red)';
-    const marginWidth = Math.min(p.margin / 50 * 100, 100);
-    return `<tr style="${isWinner ? 'background:rgba(0,230,118,0.03);' : ''}">
-      <td><div class="product-cell">
-        <div class="product-dot" style="background:${p.color}"></div>
-        <div>
-          <div class="product-name-col">${p.name}</div>
-          <div class="product-asin">${p.asin}</div>
-        </div>
-      </div></td>
-      <td>${badge}</td>
-      <td class="mono">${p.units}</td>
-      <td class="mono">£${p.revenue.toLocaleString()}</td>
-      <td class="mono" style="color:var(--text-dim)">£${p.totalCogs.toLocaleString()}</td>
-      <td class="mono" style="color:var(--text-dim)">£${p.totalFees.toLocaleString()}</td>
-      <td class="mono" style="color:var(--text-dim)">£${p.ppcSpend.toLocaleString()}</td>
-      <td class="mono" style="color:${p.netProfit > 0 ? 'var(--green)' : 'var(--red)'}">£${p.netProfit.toLocaleString()}</td>
-      <td><div style="display:flex; align-items:center; gap:0.5rem;">
-        <div class="margin-bar-container">
-          <div class="margin-bar" style="width:${marginWidth}%; background:${marginColor};"></div>
-        </div>
-        <span class="mono" style="color:${marginColor}">${p.margin}%</span>
-      </div></td>
-      <td class="mono" style="color:${p.roi > 100 ? 'var(--green)' : 'var(--amber)'}">${p.roi}%</td>
-    </tr>`;
-  }).join('');
-}
-
-function renderProfitCards() {
-  const grid = document.getElementById('profitGrid');
-  grid.innerHTML = currentData.map(p => `
-    <div class="profit-card">
-      <div class="profit-card-title"><span style="color:${p.color}">●</span> ${p.name}</div>
-      <div class="profit-row"><span class="label">Revenue</span><span class="val">£${p.revenue.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">COGS</span><span class="val negative">-£${p.totalCogs.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">Amazon Referral</span><span class="val negative">-£${p.amazonReferral.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">FBA Fulfilment</span><span class="val negative">-£${p.fbaTotal.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">PPC / Ads</span><span class="val negative">-£${p.ppcSpend.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">Shipping In</span><span class="val negative">-£${p.shipping.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">Storage</span><span class="val negative">-£${p.storage.toLocaleString()}</span></div>
-      <div class="profit-row"><span class="label">Returns</span><span class="val negative">-£${p.returnCost.toLocaleString()}</span></div>
-      <div class="profit-total">
-        <span>Net Profit</span>
-        <span class="val" style="color:${p.netProfit > 0 ? 'var(--green)' : 'var(--red)'}">£${p.netProfit.toLocaleString()}</span>
-      </div>
-      <div style="margin-top:0.6rem; text-align:center;">
-        <span class="dash-badge ${p.margin > 35 ? 'badge-winner' : p.margin > 20 ? 'badge-growth' : 'badge-risk'}">
-          Margin ${p.margin}% &nbsp;|&nbsp; ROI ${p.roi}%
-        </span>
-      </div>
-    </div>`).join('');
-}
-
-let revChart, pieChart, costChart, roiChart;
-
-function renderCharts() {
-  renderRevenueChart();
-  renderPieChart();
-  renderCostChart();
-  renderROIChart();
-}
-
-function renderRevenueChart() {
-  const ctx = document.getElementById('revenueChart');
-  if (!ctx) return;
-  if (revChart) revChart.destroy();
-  const labels = Array.from({length: 30}, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - 29 + i);
-    return d.getDate() + '/' + (d.getMonth() + 1);
-  });
-  const dailyRev = currentData.reduce((s, p) => s + p.revenue, 0) / 30;
-  const dailyProf = currentData.reduce((s, p) => s + p.netProfit, 0) / 30;
-  const revData = labels.map((_, i) => +(dailyRev * (1 + (i / 30) * 0.15) * (0.8 + Math.random() * 0.4)).toFixed(0));
-  const profData = labels.map((_, i) => +(dailyProf * (1 + (i / 30) * 0.2) * (0.75 + Math.random() * 0.5)).toFixed(0));
-  revChart = new Chart(ctx.getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets: [
-      { label: 'Revenue', data: revData, borderColor: '#00E5FF', backgroundColor: 'rgba(0,229,255,0.08)', fill: true, tension: 0.4, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 },
-      { label: 'Net Profit', data: profData, borderColor: '#00E676', backgroundColor: 'rgba(0,230,118,0.06)', fill: true, tension: 0.4, pointRadius: 0, pointHitRadius: 10, borderWidth: 2 }
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, boxWidth: 12, padding: 16 }},
-        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
-          callbacks: { label: c => c.dataset.label + ': £' + c.parsed.y.toLocaleString() }}
-      },
-      scales: {
-        x: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10 }},
-        y: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '£' + v }}
-      }
-    }
-  });
-}
-
-function renderPieChart() {
-  const ctx = document.getElementById('productPieChart');
-  if (!ctx) return;
-  if (pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx.getContext('2d'), {
-    type: 'doughnut',
-    data: { labels: currentData.map(p => p.name.split(' ').slice(0, 3).join(' ')),
-      datasets: [{ data: currentData.map(p => p.revenue), backgroundColor: currentData.map(p => p.color), borderColor: '#081828', borderWidth: 3, hoverOffset: 8 }]},
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '62%',
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, padding: 12, boxWidth: 10 }},
-        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
-          callbacks: { label: c => { const t = c.dataset.data.reduce((s,v) => s+v, 0);
-            return ' £' + c.parsed.toLocaleString() + ' (' + (c.parsed/t*100).toFixed(1) + '%)'; }}}
-      }
-    }
-  });
-}
-
-function renderCostChart() {
-  const ctx = document.getElementById('costChart');
-  if (!ctx) return;
-  if (costChart) costChart.destroy();
-  const cats = ['COGS', 'Amazon Fees', 'FBA', 'PPC', 'Shipping', 'Storage', 'Returns'];
-  const getCat = (p, c) => ({
-    'COGS': p.totalCogs, 'Amazon Fees': p.amazonReferral, 'FBA': p.fbaTotal,
-    'PPC': p.ppcSpend, 'Shipping': p.shipping, 'Storage': +p.storage, 'Returns': p.returnCost
-  })[c];
-  costChart = new Chart(ctx.getContext('2d'), {
-    type: 'bar',
-    data: { labels: cats,
-      datasets: currentData.map(p => ({
-        label: p.name.split(' ').slice(0, 2).join(' '),
-        data: cats.map(c => getCat(p, c)),
-        backgroundColor: p.color + 'CC', borderColor: p.color,
-        borderWidth: 1, borderRadius: 3
-      }))},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top', labels: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 11 }, boxWidth: 10, padding: 14 }},
-        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
-          callbacks: { label: c => c.dataset.label + ': £' + c.parsed.y.toLocaleString() }}
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: '#4A6F8F', font: { family: 'Rajdhani', size: 10 }}},
-        y: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => '£' + v }}
-      }
-    }
-  });
-}
-
-function renderROIChart() {
-  const ctx = document.getElementById('roiChart');
-  if (!ctx) return;
-  if (roiChart) roiChart.destroy();
-  roiChart = new Chart(ctx.getContext('2d'), {
-    type: 'bar',
-    data: { labels: currentData.map(p => p.name.split(' ').slice(0, 2).join(' ')),
-      datasets: [{ label: 'ROI %', data: currentData.map(p => p.roi),
-        backgroundColor: currentData.map(p => p.roi > 150 ? 'rgba(0,230,118,0.7)' : p.roi > 80 ? 'rgba(0,229,255,0.6)' : 'rgba(255,184,0,0.6)'),
-        borderColor: currentData.map(p => p.roi > 150 ? '#00E676' : p.roi > 80 ? '#00E5FF' : '#FFB800'),
-        borderWidth: 1, borderRadius: 6, barPercentage: 0.6 }]},
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { backgroundColor: '#0A1E35', borderColor: 'rgba(0,229,255,0.2)', borderWidth: 1,
-          callbacks: { label: c => 'ROI: ' + c.parsed.x + '%' }}
-      },
-      scales: {
-        x: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4A6F8F', font: { family: 'JetBrains Mono', size: 10 }, callback: v => v + '%' }},
-        y: { grid: { display: false }, ticks: { color: '#7BA3C4', font: { family: 'Rajdhani', size: 12, weight: '600' }}}
-      }
-    }
-  });
-}
-
-function setRange(btn, range) {
-  document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderAll();
-}
-
-function refreshData(btn) {
-  btn.classList.add('spinning');
-  setTimeout(() => {
-    btn.classList.remove('spinning');
-    renderAll();
-  }, 800);
-}
-
-// Auto-refresh every 60 seconds when authenticated
-setInterval(() => {
-  if (isAuthenticated() && document.getElementById('dashboardArea').style.display !== 'none') {
-    renderAll();
-  }
-}, 60000);
 </script>
+
+<script src="dashboard-engine.js"></script>
 
 </body>
 </html>

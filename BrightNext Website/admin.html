@@ -475,6 +475,7 @@ canvas { max-width: 100% !important; height: auto !important; }
 }
 
 .table-scroll { overflow-x: auto; }
+.returns-empty { text-align:center; color:var(--text-dim); padding:1.5rem 1rem; font-size:0.85rem; }
 
 table { width: 100%; border-collapse: collapse; }
 
@@ -781,7 +782,7 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
   <div class="sidebar-section">Analytics</div>
   <a class="sidebar-link" href="#"><span class="icon">📈</span> Sales Trends</a>
   <a class="sidebar-link" href="#"><span class="icon">📦</span> Inventory</a>
-  <a class="sidebar-link" href="#"><span class="icon">🔄</span> Returns &amp; Refunds</a>
+  <a class="sidebar-link" href="#returns-refunds"><span class="icon">🔄</span> Returns &amp; Refunds</a>
   <a class="sidebar-link" href="#"><span class="icon">⭐</span> Reviews</a>
 
   <div class="sidebar-section">Amazon</div>
@@ -918,6 +919,33 @@ tbody tr:hover { background: rgba(0,229,255,0.03); }
     <div class="chart-card">
       <div class="chart-title">ROI Comparison <span class="sub">Per Product</span></div>
       <div class="chart-area"><canvas id="roiChart" height="240"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Returns & Refunds -->
+  <div class="table-card fade-in stagger-7" id="returns-refunds">
+    <div class="table-header">
+      <div>
+        <div class="table-title">Returns &amp; Refunds</div>
+        <div class="table-subtitle" id="returnsSummary">Real returned units from Amazon — connect live to see data</div>
+      </div>
+    </div>
+    <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Order ID</th>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Reason</th>
+          <th>Est. Refund</th>
+        </tr>
+      </thead>
+      <tbody id="returnsBody">
+        <tr><td colspan="6" class="returns-empty">Connect your Amazon account above to see real returns data.</td></tr>
+      </tbody>
+    </table>
     </div>
   </div>
 

@@ -22,11 +22,13 @@ let tokenExpiry = 0;
 const dataCache = {};
 const CACHE_TTL = 15 * 60 * 1000;
 
-// ── Per-ASIN report lifecycle cache (report generation is async on Amazon's
+// ── Async report lifecycle caches (report generation is async on Amazon's
 // side and can take anywhere from seconds to a few minutes — never block a
 // request waiting for it; advance the state machine by one step per request
-// and let the next request, e.g. the 15-min auto-refresh, pick up the result) ──
-const reportsCache = {}; // key -> { status: 'pending'|'ready', reportId, products, ts }
+// and let the next request, e.g. the 15-min auto-refresh, pick up the result).
+// One cache per report type, keyed by interval.key. ──
+const productsReportCache = {}; // key -> { status: 'pending'|'ready', reportId, data, ts }
+const returnsReportCache = {};
 const REPORT_CACHE_TTL = 30 * 60 * 1000;
 
 // ── LWA: exchange refresh token for access token ──
@@ -108,14 +110,16 @@ async function fetchOrders(accessToken, interval) {
   return spApiGet('/orders/v0/orders', {
     MarketplaceIds: MARKETPLACE_ID,
     CreatedAfter: interval.startDate.toISOString(),
-    OrderStatuses: 'Shipped,Unshipped,PartiallyShipped',
+    // Must include Canceled — transformData() counts cancelled orders as a
+    // return-rate proxy, which was always 0 when this list excluded them.
+    OrderStatuses: 'Shipped,Unshipped,PartiallyShipped,Canceled',
   }, accessToken);
 }
 
-// ── Reports API: real per-ASIN units + revenue (Business Reports data) ──
-async function createSalesReport(accessToken, interval) {
+// ── Reports API (async: create -> poll -> download) ──
+async function createReport(accessToken, interval, reportType) {
   const res = await spApiPost('/reports/2021-06-30/reports', {
-    reportType: 'GET_SALES_AND_TRAFFIC_REPORT',
+    reportType,
     marketplaceIds: [MARKETPLACE_ID],
     dataStartTime: interval.startDate.toISOString(),
     dataEndTime: interval.endDate.toISOString(),
@@ -131,13 +135,14 @@ async function getReportDocument(accessToken, reportDocumentId) {
   return httpsGet(SP_API_HOST, `/reports/2021-06-30/documents/${reportDocumentId}`, { 'x-amz-access-token': accessToken });
 }
 
-async function downloadAndParseReport(doc) {
+async function downloadReportBuffer(doc) {
   let buf = await httpsGetBuffer(doc.url);
   if (doc.compressionAlgorithm === 'GZIP') buf = zlib.gunzipSync(buf);
-  return JSON.parse(buf.toString('utf8'));
+  return buf;
 }
 
-function extractProductsFromReport(report) {
+function extractProductsFromReport(buf) {
+  const report = JSON.parse(buf.toString('utf8'));
   const rows = report?.salesAndTrafficByAsin ?? [];
   return rows.map(r => ({
     asin: r.childAsin || r.parentAsin,
@@ -146,16 +151,44 @@ function extractProductsFromReport(report) {
   }));
 }
 
-// Advances the report lifecycle for this range by exactly one step per call —
-// never blocks waiting for Amazon to finish generating the report. Returns
-// whatever per-ASIN data is currently known (possibly []); the *next* request
-// (auto-refresh every 15 min, or a manual refresh) will pick up further progress.
-async function advanceProductsReport(accessToken, interval) {
+// Amazon's flat-file reports are tab-delimited with a header row. Strips a
+// leading UTF-8 BOM first — without it, the *first* column's header silently
+// comes back empty (bit us once already with scripts/list-asins.js).
+function parseTsv(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  const headers = lines[0].split('\t').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const cells = line.split('\t');
+    const row = {};
+    headers.forEach((h, i) => { row[h] = cells[i]; });
+    return row;
+  });
+}
+
+function extractReturnsFromReport(buf) {
+  const rows = parseTsv(buf.toString('utf8'));
+  return rows.map(r => ({
+    orderId: r['order-id'] || '',
+    date: r['return-date'] || '',
+    sku: r['sku'] || '',
+    asin: r['asin'] || '',
+    quantity: parseInt(r['quantity'], 10) || 0,
+    reason: r['reason'] || '',
+    disposition: r['detailed-disposition'] || r['status'] || '',
+  }));
+}
+
+// Advances a report's lifecycle by exactly one step per call — never blocks
+// waiting for Amazon to finish generating it. Returns whatever data is
+// currently known (possibly []); the *next* request (auto-refresh every 15
+// min, or a manual refresh) picks up further progress.
+async function advanceReport(accessToken, interval, { cache, reportType, extractFn }) {
   const key = interval.key;
-  const entry = reportsCache[key];
+  const entry = cache[key];
 
   if (entry?.status === 'ready' && Date.now() - entry.ts < REPORT_CACHE_TTL) {
-    return entry.products;
+    return entry.data;
   }
 
   if (entry?.status === 'pending') {
@@ -163,32 +196,48 @@ async function advanceProductsReport(accessToken, interval) {
       const status = await getReportStatus(accessToken, entry.reportId);
       if (status.processingStatus === 'DONE' && status.reportDocumentId) {
         const doc = await getReportDocument(accessToken, status.reportDocumentId);
-        const report = await downloadAndParseReport(doc);
-        const products = extractProductsFromReport(report);
-        reportsCache[key] = { status: 'ready', products, ts: Date.now() };
-        return products;
+        const buf = await downloadReportBuffer(doc);
+        const data = extractFn(buf);
+        cache[key] = { status: 'ready', data, ts: Date.now() };
+        return data;
       }
       if (status.processingStatus === 'FATAL' || status.processingStatus === 'CANCELLED') {
-        delete reportsCache[key]; // let the next request start over
+        delete cache[key]; // let the next request start over
       }
     } catch (err) {
-      console.error('Report status check failed:', err.message);
+      console.error(`Report status check failed (${reportType}):`, err.message);
     }
-    return entry.products ?? [];
+    return entry.data ?? [];
   }
 
   // Nothing in flight for this range — kick one off, don't wait for it.
   try {
-    const reportId = await createSalesReport(accessToken, interval);
-    reportsCache[key] = { status: 'pending', reportId, products: entry?.products ?? [], ts: entry?.ts ?? 0 };
+    const reportId = await createReport(accessToken, interval, reportType);
+    cache[key] = { status: 'pending', reportId, data: entry?.data ?? [], ts: entry?.ts ?? 0 };
   } catch (err) {
-    console.error('Report creation failed:', err.message);
+    console.error(`Report creation failed (${reportType}):`, err.message);
   }
-  return entry?.products ?? [];
+  return entry?.data ?? [];
+}
+
+function advanceProductsReport(accessToken, interval) {
+  return advanceReport(accessToken, interval, {
+    cache: productsReportCache,
+    reportType: 'GET_SALES_AND_TRAFFIC_REPORT',
+    extractFn: extractProductsFromReport,
+  });
+}
+
+function advanceReturnsReport(accessToken, interval) {
+  return advanceReport(accessToken, interval, {
+    cache: returnsReportCache,
+    reportType: 'GET_FBA_FULFILLMENT_CUSTOMER_RETURNS_DATA',
+    extractFn: extractReturnsFromReport,
+  });
 }
 
 // ── Transform SP-API response into dashboard-compatible shape ──
-function transformData(salesData, ordersData, products) {
+function transformData(salesData, ordersData, products, returns) {
   // SP-API returns aggregate totals; map to the shape renderAll() expects.
   // Falls back to empty arrays if unexpected shape received.
   const metrics = salesData?.payload ?? [];
@@ -197,9 +246,12 @@ function transformData(salesData, ordersData, products) {
   const totalRevenue = metrics.reduce((s, m) => s + parseFloat(m.totalSales?.amount ?? 0), 0);
   const totalUnits = metrics.reduce((s, m) => s + (m.unitCount ?? 0), 0);
 
-  // Count returns from orders with status = Cancelled/Returned (approximation)
-  const returnCount = orders.filter(o => o.OrderStatus === 'Canceled').length;
-  const returnRate = orders.length > 0 ? returnCount / orders.length : 0;
+  // Prefer the real returns report (actual returned units / units sold) once
+  // it's ready; fall back to a cancelled-orders proxy until then.
+  const returnedUnits = returns.reduce((s, r) => s + r.quantity, 0);
+  const returnRate = returns.length > 0 && totalUnits > 0
+    ? returnedUnits / totalUnits
+    : (orders.length > 0 ? orders.filter(o => o.OrderStatus === 'Canceled').length / orders.length : 0);
 
   return {
     live: true,
@@ -209,6 +261,9 @@ function transformData(salesData, ordersData, products) {
     // Real per-ASIN { asin, units, revenue } once the Reports API pipeline has
     // finished for this range; [] until then (dashboard falls back gracefully).
     products,
+    // Real returned-item records { orderId, date, sku, asin, quantity, reason,
+    // disposition } once that report's finished; [] until then.
+    returns,
   };
 }
 
@@ -233,13 +288,14 @@ module.exports = async function handler(req, res) {
 
   try {
     const accessToken = await getAccessToken();
-    const [salesData, ordersData, products] = await Promise.all([
+    const [salesData, ordersData, products, returns] = await Promise.all([
       fetchSalesMetrics(accessToken, interval),
       fetchOrders(accessToken, interval),
       advanceProductsReport(accessToken, interval),
+      advanceReturnsReport(accessToken, interval),
     ]);
 
-    const result = transformData(salesData, ordersData, products);
+    const result = transformData(salesData, ordersData, products, returns);
     dataCache[cacheKey] = { ts: Date.now(), data: result };
     res.status(200).json(result);
   } catch (err) {

@@ -6,6 +6,7 @@
 let isLiveMode = false;
 let currentRange = '30d';
 let liveTotals = null; // { totalRevenue, totalUnits, returnRate } from the aggregate SP-API endpoint
+let currentReturns = []; // real returned-item records; only ever real data, never simulated
 
 // ── name/asin below are REAL (from npm run list-asins against your Seller
 // Central account). unitPrice/cogs/amazonFeeRate/fbaFee/ppcCostPerUnit/
@@ -628,6 +629,66 @@ function applyLiveData(data) {
   renderTable();
   renderProfitCards();
   renderCharts();
+
+  currentReturns = mergeReturns(data.returns || []);
+  renderReturns();
+}
+
+// Returns data comes from Amazon's API, not our own trusted PRODUCTS config —
+// escape before injecting into innerHTML below.
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ── Real returned-item records only — no simulated fallback here. Fabricating
+// individual fake return incidents (order IDs, reasons) would be actively
+// misleading in a way aggregate demo revenue numbers aren't.
+function mergeReturns(rawReturns) {
+  return rawReturns.map(r => {
+    const product = PRODUCTS.find(p => p.asin === r.asin);
+    return {
+      ...r,
+      productName: product ? product.name : (r.sku || r.asin || 'Unknown product'),
+      // Amazon's returns report has no refund amount field; estimate from our
+      // own unit price. Real disposition/reason/date/order id are all as-is from Amazon.
+      estimatedRefund: product ? +(r.quantity * product.unitPrice).toFixed(2) : null,
+    };
+  }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}
+
+function renderReturns() {
+  const body = document.getElementById('returnsBody');
+  const summary = document.getElementById('returnsSummary');
+  if (!body) return;
+
+  if (!isLiveMode) {
+    body.innerHTML = '<tr><td colspan="6" class="returns-empty">Connect your Amazon account above to see real returns data.</td></tr>';
+    if (summary) summary.textContent = 'Real returned units from Amazon — connect live to see data';
+    return;
+  }
+
+  if (currentReturns.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" class="returns-empty">No returns in this period, or the returns report is still generating (check back in a minute).</td></tr>';
+    if (summary) summary.textContent = 'Real returned units from Amazon';
+    return;
+  }
+
+  const totalUnits = currentReturns.reduce((s, r) => s + r.quantity, 0);
+  const totalRefund = currentReturns.reduce((s, r) => s + (r.estimatedRefund || 0), 0);
+  if (summary) {
+    summary.textContent = `${currentReturns.length} return${currentReturns.length === 1 ? '' : 's'} · ${totalUnits} unit${totalUnits === 1 ? '' : 's'} · ~£${totalRefund.toFixed(2)} estimated refunds`;
+  }
+
+  body.innerHTML = currentReturns.map(r => `
+    <tr>
+      <td>${escapeHtml(r.date) || '—'}</td>
+      <td>${escapeHtml(r.orderId) || '—'}</td>
+      <td>${escapeHtml(r.productName)}</td>
+      <td>${r.quantity}</td>
+      <td>${escapeHtml(r.reason) || '—'}</td>
+      <td>${r.estimatedRefund != null ? '£' + r.estimatedRefund.toFixed(2) + ' (est.)' : '—'}</td>
+    </tr>
+  `).join('');
 }
 
 // ══════════════════════════
